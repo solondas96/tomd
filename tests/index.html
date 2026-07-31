@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>toMD — Test Suite</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.6; padding: 1.5rem; background: #1a1a2e; color: #e0e0e0; }
+    h1 { margin-bottom: 1rem; font-size: 1.4rem; color: #64ffda; }
+    .test-summary { padding: 1rem; margin-bottom: 1rem; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
+    .test-pass { color: #66bb6a; padding: 2px 0; }
+    .test-fail { color: #ef5350; padding: 2px 0; }
+    .test-fail pre { background: #2d1b1b; padding: .5rem; margin: .25rem 0 .5rem 1.5rem; border-radius: 4px; font-size: 12px; white-space: pre-wrap; color: #ffab91; }
+    .test-summary { background: #16213e; border: 1px solid #0f3460; }
+    #timer { color: #aaa; margin-bottom: 1rem; }
+  </style>
+  <!-- Load DOMPurify for security tests -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <h1>toMD Test Suite</h1>
+  <div id="timer"></div>
+  <div id="results"></div>
+
+  <script type="module">
+    import { runAll } from './framework.js';
+    import testUtils from './test-utils.js';
+    import testConfig from './test-config.js';
+    import testState from './test-state.js';
+    import testFormats from './test-formats.js';
+    import testConverterIndex from './test-converter-index.js';
+    import testDom from './test-dom.js';
+    import testFileHandler from './test-file-handler.js';
+    import testFeatures from './test-features.js';
+    import testSW from './test-sw.js';
+    import testSecurity from './test-security.js';
+    import testEdgeCases from './test-edge-cases.js';
+    import testUI from './test-ui.js';
+
+    const start = performance.now();
+
+    await runAll([
+      testConfig,
+      testUtils,
+      testState,
+      testFormats,
+      testConverterIndex,
+      testDom,
+      testFileHandler,
+      testFeatures,
+      testSW,
+      testSecurity,
+      testEdgeCases,
+      testUI,
+    ]);
+
+    document.getElementById('timer').textContent =
+      `Completed in ${(performance.now() - start).toFixed(0)}ms`;
+  </script>
+</body>
+</html>
