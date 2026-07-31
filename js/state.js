@@ -25,7 +25,7 @@ export function loadSettings() {
 
 export function saveSettings(settings) {
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
-  catch { /* QuotaExceededError — settings not persisted */ }
+  catch (err) { console.warn('[toMD] Settings not persisted:', err.name); }
 }
 
 export let settings = loadSettings();

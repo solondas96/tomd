@@ -2,6 +2,7 @@
 
 import { dom } from './dom.js';
 import { state, settings } from './state.js';
+import { FETCH_TIMEOUT_MS } from './config.js';
 import { loadScript, wordCount, generateFrontmatter } from './utils.js';
 import { processSingleFile } from './file-handler.js';
 import {
@@ -38,6 +39,24 @@ export function initClipboard() {
 
 // ── URL import ────────────────────────────────────────────────
 
+const PROXY_URLS = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
+
+async function fetchViaProxy(url, signal) {
+  for (const buildUrl of PROXY_URLS) {
+    try {
+      const resp = await fetch(buildUrl(url), { signal });
+      if (resp.ok) return await resp.text();
+    } catch (err) {
+      if (err.name === 'TimeoutError' || err.name === 'AbortError') break;
+    }
+  }
+  return null;
+}
+
 export function initUrlImport() {
   dom.urlFetchBtn.addEventListener('click', fetchUrl);
   dom.urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') fetchUrl(); });
@@ -54,17 +73,9 @@ async function fetchUrl() {
   hideError(); show(dom.progressSection); hide(dom.uploadSection);
   setProgress(20, 'Fetching page...');
 
-  const timeout = AbortSignal.timeout(30000);
+  const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
   try {
-    let html = null;
-    const proxies = [
-      `https://corsproxy.io/?${encodeURIComponent(url)}`,
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-    ];
-    for (const proxyUrl of proxies) {
-      try { const r = await fetch(proxyUrl, { signal: timeout }); if (r.ok) { html = await r.text(); break; } } catch (e) { if (e.name === 'TimeoutError') break; /* try next */ }
-    }
+    const html = await fetchViaProxy(url, timeout);
     if (!html) throw new Error('Could not fetch URL. The site may block external access or the request timed out.');
 
     setProgress(50, 'Converting to Markdown...');

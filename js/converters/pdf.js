@@ -13,7 +13,7 @@ export async function convertPdf(file, onProgress, opts) {
   const pages = [];
   let metadata = null;
 
-  try { metadata = (await pdf.getMetadata())?.info || null; } catch {}
+  try { metadata = (await pdf.getMetadata())?.info || null; } catch (err) { console.warn('[toMD] Could not read PDF metadata:', err.message); }
 
   for (let p = from; p <= to; p++) {
     try {

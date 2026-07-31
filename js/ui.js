@@ -2,7 +2,7 @@
 
 import { dom } from './dom.js';
 import { state, settings, updateSettings, loadSettings } from './state.js';
-import { MAX_UNDO, MAX_HISTORY, MAX_MD_STORE, HISTORY_KEY, SETTINGS_KEY } from './config.js';
+import { MAX_UNDO, MAX_HISTORY, MAX_MD_STORE, MAX_TOASTS, HISTORY_KEY, SETTINGS_KEY } from './config.js';
 import { escHtml, escRegex, wordCount, formatBytes, parsePdfDate, formatDate } from './utils.js';
 
 // ── Toast ─────────────────────────────────────────────────────
@@ -13,8 +13,7 @@ export function toast(msg, type = 'info', dur = 3000) {
     error: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
     info: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
   };
-  // Cap at 5 visible toasts
-  while (dom.toastContainer.children.length >= 5) dom.toastContainer.firstChild.remove();
+  while (dom.toastContainer.children.length >= MAX_TOASTS) dom.toastContainer.firstChild.remove();
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
   el.innerHTML = `${icons[type] || icons.info}<span>${escHtml(msg)}</span>`;

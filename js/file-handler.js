@@ -1,6 +1,6 @@
 // File input, drop zone, single conversion, batch processing, merge
 
-import { FORMAT_MAP } from './config.js';
+import { FORMAT_MAP, MAX_FILE_SIZE } from './config.js';
 import { state, settings } from './state.js';
 import { dom } from './dom.js';
 import { wordCount, friendlyError, escHtml, slugify, loadScript, generateFrontmatter } from './utils.js';
@@ -47,7 +47,6 @@ export function initFileInput() {
 function handleFiles(files) {
   const valid = files.filter(isSupported);
   if (!valid.length) { showError('No supported file types found.'); return; }
-  const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
   const oversized = valid.find(f => f.size > MAX_FILE_SIZE);
   if (oversized) { showError(`File too large: ${oversized.name} (${(oversized.size / 1048576).toFixed(0)} MB). Max 100 MB.`); return; }
   hideError();
