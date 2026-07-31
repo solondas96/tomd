@@ -310,6 +310,11 @@ input, select, textarea { font-family: inherit; }
 @keyframes fade-in { 0%{opacity:0} 100%{opacity:1} }
 @keyframes slide-down { 0%{opacity:0;transform:translateY(-6px)} 100%{opacity:1;transform:translateY(0)} }
 
+/* ── Source PDF viewer ──────────────────────────────────── */
+.source-viewer { height: 560px; overflow-y: auto; background: var(--surface-alt); border-radius: var(--radius-sm); padding: 1rem; }
+.source-viewer-scroll { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.source-page-canvas { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-xs); box-shadow: var(--shadow); background: #fff; }
+
 /* ── Dark mode ──────────────────────────────────────────── */
 [data-theme="dark"] { --bg:#171412; --surface:#1E1A17; --surface-alt:#231F1B; --primary:#E8845E; --primary-dark:#F09A76; --primary-soft:#2C1F18; --primary-glow:rgba(232,132,94,.15); --text:#F0EAE4; --text-secondary:#C8BDB5; --muted:#8A7D78; --border:#2E2520; --border-light:#261F1B; --error-bg:#2C1514; --header-bg:#0D0B09; --header-sub:#7A6D68; --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); --shadow-md:0 2px 8px rgba(0,0,0,.4),0 8px 32px rgba(0,0,0,.3); --shadow-lg:0 4px 12px rgba(0,0,0,.5),0 16px 48px rgba(0,0,0,.4); --shadow-glow:0 0 0 4px rgba(232,132,94,.12),0 4px 16px rgba(232,132,94,.1); }
 [data-theme="dark"] .md-textarea { background: #1A1613; } [data-theme="dark"] .md-textarea:not([readonly]) { background: #201A15; }

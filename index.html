@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4f46e5" />
 </head>
 <body>
   <div class="app">
@@ -70,6 +72,24 @@
         <div class="setting-group"><div class="setting-toggle-row"><div><label class="setting-label" for="settingTableDetection">Table detection</label><p class="setting-hint">Convert column-aligned text to tables.</p></div><label class="toggle-sw"><input type="checkbox" id="settingTableDetection" checked /><span class="toggle-thumb"></span></label></div></div>
         <div class="setting-group"><div class="setting-toggle-row"><div><label class="setting-label" for="settingExtractImages">Embed page images</label><p class="setting-hint">Render image-only pages as base64.</p></div><label class="toggle-sw"><input type="checkbox" id="settingExtractImages" /><span class="toggle-thumb"></span></label></div></div>
         <div class="setting-group"><div class="setting-toggle-row"><div><label class="setting-label" for="settingOcr">OCR for scanned docs</label><p class="setting-hint">Tesseract.js (~5 MB) for image-based content.</p></div><label class="toggle-sw"><input type="checkbox" id="settingOcr" /><span class="toggle-thumb"></span></label></div></div>
+        <div class="setting-group">
+          <label class="setting-label" for="settingOcrLanguage">OCR language</label>
+          <p class="setting-hint">Primary language for text recognition.</p>
+          <select class="setting-select" id="settingOcrLanguage">
+            <option value="eng" selected>English</option>
+            <option value="spa">Spanish</option>
+            <option value="fra">French</option>
+            <option value="deu">German</option>
+            <option value="ita">Italian</option>
+            <option value="por">Portuguese</option>
+            <option value="chi_sim">Chinese (Simplified)</option>
+            <option value="jpn">Japanese</option>
+            <option value="kor">Korean</option>
+            <option value="ara">Arabic</option>
+            <option value="hin">Hindi</option>
+            <option value="rus">Russian</option>
+          </select>
+        </div>
         <div class="setting-group"><div class="setting-toggle-row"><div><label class="setting-label" for="settingFrontmatter">YAML frontmatter</label><p class="setting-hint">Auto-prepend title, date &amp; author metadata.</p></div><label class="toggle-sw"><input type="checkbox" id="settingFrontmatter" /><span class="toggle-thumb"></span></label></div></div>
         <div class="setting-group"><div class="setting-toggle-row"><div><label class="setting-label" for="settingSyntaxHighlight">Syntax highlighting</label><p class="setting-hint">Colorize markdown syntax in the editor.</p></div><label class="toggle-sw"><input type="checkbox" id="settingSyntaxHighlight" checked /><span class="toggle-thumb"></span></label></div></div>
       </div>
@@ -235,6 +255,7 @@
               <button class="tab active" data-tab="raw" role="tab" aria-selected="true">Raw Markdown</button>
               <button class="tab" data-tab="preview" role="tab" aria-selected="false">Preview</button>
               <button class="tab" data-tab="split" role="tab" aria-selected="false">Split</button>
+              <button class="tab hidden" data-tab="source" role="tab" aria-selected="false" id="sourceTab">Source</button>
             </div>
             <div class="toolbar-actions">
               <button class="action-btn" id="tocBtn" type="button" title="Document outline"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="12" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="16" y2="18"/></svg> TOC</button>
@@ -249,6 +270,7 @@
                   <button class="dropdown-item" id="downloadMd">Download .md</button>
                   <button class="dropdown-item" id="downloadHtml">Download .html</button>
                   <button class="dropdown-item" id="downloadTxt">Download .txt</button>
+                  <button class="dropdown-item" id="downloadDocx">Download .docx</button>
                   <div class="dropdown-divider"></div>
                   <button class="dropdown-item" id="copyHtmlBtn">Copy as HTML</button>
                 </div>
@@ -288,6 +310,11 @@
                 <div class="split-pane split-editor"><div class="split-label">Markdown</div><textarea class="md-textarea split-textarea" id="splitMarkdownOutput" readonly spellcheck="false"></textarea></div>
                 <div class="split-divider"></div>
                 <div class="split-pane split-preview-pane"><div class="split-label">Preview</div><div class="preview-body" id="splitPreviewBody"></div></div>
+              </div>
+            </div>
+            <div class="tab-panel" id="panel-source">
+              <div class="source-viewer" id="sourceViewer">
+                <div class="source-viewer-scroll" id="sourceViewerScroll"></div>
               </div>
             </div>
           </div>

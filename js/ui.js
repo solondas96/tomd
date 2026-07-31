@@ -3,7 +3,7 @@
 import { dom } from './dom.js';
 import { state, settings, updateSettings, loadSettings } from './state.js';
 import { MAX_UNDO, MAX_HISTORY, MAX_MD_STORE, MAX_TOASTS, HISTORY_KEY, SETTINGS_KEY } from './config.js';
-import { escHtml, escRegex, wordCount, formatBytes, parsePdfDate, formatDate } from './utils.js';
+import { escHtml, escRegex, wordCount, formatBytes, parsePdfDate, formatDate, loadScript } from './utils.js';
 
 // ── Toast ─────────────────────────────────────────────────────
 
@@ -55,6 +55,7 @@ export function initSettings() {
     ['settingTableDetection', 'tableDetection', 'checked'],
     ['settingExtractImages', 'extractImages', 'checked'],
     ['settingOcr', 'ocr', 'checked'],
+    ['settingOcrLanguage', 'ocrLanguage', 'value'],
     ['settingFrontmatter', 'frontmatter', 'checked'],
     ['settingSyntaxHighlight', 'syntaxHighlight', 'checked'],
   ];
@@ -154,6 +155,7 @@ export function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
   if (name === 'preview' && state.currentMarkdown) renderPreview();
   if (name === 'split' && state.currentMarkdown) { dom.splitMdOutput.value = state.currentMarkdown; renderSplitPreview(); }
+  if (name === 'source') showSourceViewer();
 }
 
 function renderPreview() {
@@ -414,6 +416,26 @@ export function initExport() {
     toast('Downloaded .txt', 'success', 2000);
   });
 
+  document.getElementById('downloadDocx').addEventListener('click', async () => {
+    if (!state.currentMarkdown) return;
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', 'JSZip');
+    const html = marked.parse(state.currentMarkdown);
+    const sanitized = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
+    const body = sanitized.replace(/<img[^>]*>/g, '');
+    const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${htmlToDocxBody(body)}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
+    const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+    const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+    const wordRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
+    const zip = new JSZip();
+    zip.file('[Content_Types].xml', contentTypes);
+    zip.file('_rels/.rels', rels);
+    zip.file('word/document.xml', docXml);
+    zip.file('word/_rels/document.xml.rels', wordRels);
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    downloadBlob(blob, stem() + '.docx');
+    toast('Downloaded .docx', 'success', 2000);
+  });
+
   document.getElementById('copyHtmlBtn').addEventListener('click', async () => {
     const h = marked.parse(state.currentMarkdown);
     const s = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(h) : h;
@@ -469,11 +491,65 @@ export function initHighlight() {
   dom.markdownOutput.addEventListener('scroll', syncHighlightScroll);
 }
 
+// ── DOCX body helper ──────────────────────────────────────────
+
+function htmlToDocxBody(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  const paragraphs = [];
+  for (const node of div.childNodes) {
+    const tag = (node.tagName || '').toLowerCase();
+    const text = (node.textContent || '').trim();
+    if (!text && !['table', 'ul', 'ol'].includes(tag)) continue;
+    if (/^h[1-6]$/.test(tag)) {
+      const level = +tag[1];
+      const sz = [52, 40, 32, 28, 26, 24][level - 1];
+      paragraphs.push(`<w:p><w:pPr><w:pStyle w:val="Heading${level}"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="${sz}"/></w:rPr><w:t xml:space="preserve">${escXml(text)}</w:t></w:r></w:p>`);
+    } else if (tag === 'li' || tag === 'ul' || tag === 'ol') {
+      for (const li of (tag === 'li' ? [node] : node.querySelectorAll('li'))) {
+        paragraphs.push(`<w:p><w:r><w:t xml:space="preserve">\u2022 ${escXml(li.textContent.trim())}</w:t></w:r></w:p>`);
+      }
+    } else {
+      paragraphs.push(`<w:p><w:r><w:t xml:space="preserve">${escXml(text)}</w:t></w:r></w:p>`);
+    }
+  }
+  return paragraphs.join('');
+}
+
+function escXml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── PDF source viewer ─────────────────────────────────────────
+
+export async function renderSourcePdf(file) {
+  state.sourceFile = file;
+  const sourceTab = document.getElementById('sourceTab');
+  sourceTab.classList.remove('hidden');
+}
+
+async function showSourceViewer() {
+  const file = state.sourceFile;
+  if (!file) return;
+  const container = document.getElementById('sourceViewerScroll');
+  if (container.children.length) return;
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const vp = page.getViewport({ scale: 1.2 });
+    const canvas = Object.assign(document.createElement('canvas'), { width: vp.width, height: vp.height, className: 'source-page-canvas' });
+    container.appendChild(canvas);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  }
+}
+
 // ── Reset ─────────────────────────────────────────────────────
 
 export function resetUI() {
   state.currentMarkdown = ''; state.currentFilename = '';
   state.batchResults = []; state.undoStack = []; state.redoStack = [];
+  state.sourceFile = null;
   updateUndoUI();
   dom.markdownOutput.value = ''; dom.splitMdOutput.value = '';
   dom.previewBody.innerHTML = ''; dom.splitPreview.innerHTML = '';
@@ -484,6 +560,8 @@ export function resetUI() {
   closeFindBar(); dom.tocPanel.classList.add('hidden');
   hide(dom.outputSection); hide(dom.progressSection); hide(dom.batchSection); hide(dom.metadataSection);
   show(dom.uploadSection); hideError(); switchTab('raw');
+  document.getElementById('sourceTab').classList.add('hidden');
+  document.getElementById('sourceViewerScroll').innerHTML = '';
 }
 
 // ── Undo/Redo exports for keyboard shortcuts ──────────────────

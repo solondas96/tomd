@@ -13,6 +13,7 @@ export const state = {
   abortController: null,
   undoStack: [],
   redoStack: [],
+  sourceFile: null,
 };
 
 export function loadSettings() {

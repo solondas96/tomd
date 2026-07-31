@@ -5,6 +5,7 @@ import { state, settings } from './state.js';
 import { FETCH_TIMEOUT_MS } from './config.js';
 import { loadScript, wordCount, generateFrontmatter } from './utils.js';
 import { processSingleFile } from './file-handler.js';
+import { addTableRule } from './converters/formats.js';
 import {
   toast, setProgress, show, hide, showError, hideError,
   updateStats, showMetadata, switchTab, buildTOC,
@@ -80,7 +81,7 @@ async function fetchUrl() {
 
     setProgress(50, 'Converting to Markdown...');
     await loadScript('https://cdn.jsdelivr.net/npm/turndown@7/dist/turndown.js', 'TurndownService');
-    const td = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+    const td = addTableRule(new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' }));
     const cleaned = html.replace(/<(script|style|nav|header|footer)[^>]*>[\s\S]*?<\/\1>/gi, '');
     const body = cleaned.replace(/^[\s\S]*<body[^>]*>/i, '').replace(/<\/body>[\s\S]*$/i, '') || cleaned;
     let md = td.turndown(body);

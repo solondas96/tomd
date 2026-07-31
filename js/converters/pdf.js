@@ -22,7 +22,7 @@ export async function convertPdf(file, onProgress, opts) {
       const content = await page.getTextContent();
       let md = pageToMarkdown(content, vp.height, opts);
       if (!md.trim() && opts.extractImages) md = await renderPageAsImage(page);
-      if (!md.trim() && opts.ocr) md = await ocrPage(page);
+      if (!md.trim() && opts.ocr) md = await ocrPage(page, opts.ocrLanguage || 'eng');
       if (md.trim()) pages.push(md.trim());
     } catch (err) {
       pages.push(`> ⚠ Page ${p} failed: ${err.message || 'unknown error'}`);
@@ -45,6 +45,13 @@ function pageToMarkdown(textContent, pageHeight, opts) {
   const visible = items.filter(it => it.str?.trim());
   if (!visible.length) return '';
 
+  const columns = detectColumns(visible, pageHeight);
+  if (columns) {
+    const left = pageToMarkdownSingle(columns.left, pageHeight, styles, opts);
+    const right = pageToMarkdownSingle(columns.right, pageHeight, styles, opts);
+    return [left, right].filter(Boolean).join('\n\n');
+  }
+
   const bodySize = modeSize(visible.map(getFontSize));
   let lines = groupByY(visible);
   lines.sort((a, b) => b.y - a.y);
@@ -55,6 +62,38 @@ function pageToMarkdown(textContent, pageHeight, opts) {
   }
   if (!lines.length) return '';
   return assembleMarkdown(lines, bodySize, styles, opts);
+}
+
+function pageToMarkdownSingle(items, pageHeight, styles, opts) {
+  if (!items.length) return '';
+  const bodySize = modeSize(items.map(getFontSize));
+  let lines = groupByY(items);
+  lines.sort((a, b) => b.y - a.y);
+  if (opts.stripDecorations) {
+    const margin = pageHeight * 0.04;
+    lines = lines.filter(g => g.y > margin && g.y < pageHeight - margin);
+  }
+  if (!lines.length) return '';
+  return assembleMarkdown(lines, bodySize, styles, opts);
+}
+
+function detectColumns(items, pageHeight) {
+  const xs = items.map(it => it.transform[4]);
+  const pageWidth = Math.max(...xs) - Math.min(...xs);
+  if (pageWidth < 200) return null;
+
+  const midX = Math.min(...xs) + pageWidth / 2;
+  const gapMargin = pageWidth * 0.08;
+  const left = items.filter(it => it.transform[4] < midX - gapMargin);
+  const right = items.filter(it => it.transform[4] > midX + gapMargin);
+
+  if (left.length < 10 || right.length < 10) return null;
+
+  const leftMaxX = Math.max(...left.map(it => it.transform[4] + (it.width || 0)));
+  const rightMinX = Math.min(...right.map(it => it.transform[4]));
+  if (rightMinX - leftMaxX < pageWidth * 0.05) return null;
+
+  return { left, right };
 }
 
 function assembleMarkdown(lines, bodySize, styles, opts) {
@@ -216,13 +255,13 @@ async function renderPageAsImage(page) {
   }
 }
 
-async function ocrPage(page) {
+async function ocrPage(page, lang) {
   try {
     await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js', 'Tesseract');
     const vp = page.getViewport({ scale: 2 });
     const canvas = Object.assign(document.createElement('canvas'), { width: vp.width, height: vp.height });
     await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-    const worker = await Tesseract.createWorker('eng');
+    const worker = await Tesseract.createWorker(lang || 'eng');
     const { data: { text } } = await worker.recognize(canvas);
     await worker.terminate();
     return text.trim();

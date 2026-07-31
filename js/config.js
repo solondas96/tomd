@@ -16,10 +16,26 @@ export const DEFAULT_SETTINGS = {
   tableDetection: true,
   extractImages: false,
   ocr: false,
+  ocrLanguage: 'eng',
   darkMode: false,
   frontmatter: false,
   syntaxHighlight: true,
 };
+
+export const OCR_LANGUAGES = [
+  { code: 'eng', label: 'English' },
+  { code: 'spa', label: 'Spanish' },
+  { code: 'fra', label: 'French' },
+  { code: 'deu', label: 'German' },
+  { code: 'ita', label: 'Italian' },
+  { code: 'por', label: 'Portuguese' },
+  { code: 'chi_sim', label: 'Chinese (Simplified)' },
+  { code: 'jpn', label: 'Japanese' },
+  { code: 'kor', label: 'Korean' },
+  { code: 'ara', label: 'Arabic' },
+  { code: 'hin', label: 'Hindi' },
+  { code: 'rus', label: 'Russian' },
+];
 
 export const FORMAT_MAP = {
   pdf: 'pdf', docx: 'docx', pptx: 'pptx',

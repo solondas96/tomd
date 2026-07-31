@@ -9,6 +9,7 @@ import {
   toast, setProgress, show, hide, showError, hideError,
   updateStats, showMetadata, switchTab, buildTOC,
   updateSyntaxHighlight, updateUndoUI, saveToHistory, syncMarkdown, downloadBlob,
+  renderSourcePdf,
 } from './ui.js';
 
 // ── Drop zone ─────────────────────────────────────────────────
@@ -34,14 +35,42 @@ export function initFileInput() {
     if (!dom.dropZone.contains(e.relatedTarget)) { dom.dropZone.classList.remove('drag-over'); dom.dzDropCount.classList.add('hidden'); }
   });
 
-  dom.dropZone.addEventListener('drop', e => {
+  dom.dropZone.addEventListener('drop', async e => {
     e.preventDefault(); dom.dropZone.classList.remove('drag-over'); dom.dzDropCount.classList.add('hidden');
+    const entries = [...(e.dataTransfer.items || [])].map(i => i.webkitGetAsEntry?.()).filter(Boolean);
+    const hasFolder = entries.some(entry => entry.isDirectory);
+    if (hasFolder) {
+      const collected = await collectFilesFromEntries(entries);
+      const supported = collected.filter(isSupported);
+      if (!supported.length) { showError('No supported files found in folder.'); return; }
+      handleFiles(supported);
+      return;
+    }
     const files = [...e.dataTransfer.files].filter(isSupported);
     if (!files.length) { showError('No supported files found.'); return; }
     handleFiles(files);
   });
 
   dom.abortBtn.addEventListener('click', () => { if (state.abortController) state.abortController.abort(); });
+}
+
+async function collectFilesFromEntries(entries) {
+  const files = [];
+  async function readEntry(entry) {
+    if (entry.isFile) {
+      const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+      files.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      let batch;
+      do {
+        batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+        for (const child of batch) await readEntry(child);
+      } while (batch.length > 0);
+    }
+  }
+  for (const entry of entries) await readEntry(entry);
+  return files;
 }
 
 function handleFiles(files) {
@@ -65,6 +94,7 @@ export async function processSingleFile(file) {
 
   try {
     const ext = getFileExt(file), format = FORMAT_MAP[ext];
+    if (format === 'pdf') renderSourcePdf(file);
     setProgress(10, `Processing ${ext.toUpperCase()}...`);
     const result = await convertFile(file, format, (p, msg) => {
       if (state.abortController.signal.aborted) throw new DOMException('Aborted', 'AbortError');

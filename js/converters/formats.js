@@ -1,6 +1,36 @@
 // Non-PDF format converters
 
 import { loadScript, fileToBase64, formatBytes } from '../utils.js';
+import { settings } from '../state.js';
+
+// ── GFM table rule for Turndown ───────────────────────────────
+
+export function addTableRule(td) {
+  td.addRule('tableCell', {
+    filter: ['th', 'td'],
+    replacement(content, node) {
+      return ' ' + content.replace(/\|/g, '\\|').replace(/\n/g, ' ').trim() + ' |';
+    },
+  });
+  td.addRule('tableRow', {
+    filter: 'tr',
+    replacement(content, node) {
+      return '|' + content.trim() + '\n';
+    },
+  });
+  td.addRule('table', {
+    filter: 'table',
+    replacement(content, node) {
+      const rows = content.trim().split('\n').filter(Boolean);
+      if (!rows.length) return content;
+      const colCount = (rows[0].match(/\|/g) || []).length - 1;
+      const sep = '|' + ' --- |'.repeat(colCount);
+      return '\n\n' + rows[0] + sep + '\n' + rows.slice(1).join('\n') + '\n\n';
+    },
+  });
+  td.addRule('thead', { filter: ['thead', 'tbody', 'tfoot'], replacement: c => c });
+  return td;
+}
 
 // ── DOCX ──────────────────────────────────────────────────────
 
@@ -69,7 +99,7 @@ export async function convertHtml(file, onProgress) {
   await loadScript('https://cdn.jsdelivr.net/npm/turndown@7/dist/turndown.js', 'TurndownService');
   onProgress(0.3, 'Converting HTML...');
   const html = await file.text();
-  const td = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+  const td = addTableRule(new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' }));
   return { markdown: td.turndown(html), pageCount: 1, metadata: null };
 }
 
@@ -83,7 +113,7 @@ export async function convertEpub(file, onProgress) {
   try { buf = await file.arrayBuffer(); } catch { throw new Error('Could not read file. It may have been moved or deleted.'); }
   const zip = await JSZip.loadAsync(buf);
   const htmlFiles = Object.keys(zip.files).filter(f => /\.(x?html?)$/i.test(f)).sort();
-  const td = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+  const td = addTableRule(new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' }));
   const chapters = [];
   for (let i = 0; i < htmlFiles.length; i++) {
     const raw = await zip.file(htmlFiles[i]).async('text');
@@ -117,10 +147,11 @@ export async function convertRtf(file, onProgress) {
 
 export async function convertImage(file, onProgress) {
   let worker;
+  const lang = settings.ocrLanguage || 'eng';
   try {
     await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js', 'Tesseract');
     onProgress(0.2, 'Loading OCR engine...');
-    worker = await Tesseract.createWorker('eng');
+    worker = await Tesseract.createWorker(lang);
     onProgress(0.4, 'Recognizing text...');
     const { data: { text } } = await worker.recognize(file);
     await worker.terminate();
@@ -195,7 +226,7 @@ export async function convertJson(file, onProgress) {
 
 export function htmlToMarkdown(html) {
   if (window.TurndownService) {
-    return new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' }).turndown(html);
+    return addTableRule(new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' })).turndown(html);
   }
   return html
     .replace(/<h([1-6])[^>]*>(.*?)<\/h[1-6]>/gi, (_, l, t) => '#'.repeat(+l) + ' ' + t.replace(/<[^>]+>/g, ''))
