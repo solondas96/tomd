@@ -1,0 +1,7 @@
+{
+  "mode": "cache",
+  "backend": "anthropic",
+  "port": 8787,
+  "host": "127.0.0.1",
+  "telemetry": false
+}
