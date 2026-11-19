@@ -3,16 +3,8 @@ import { FileText, History, Moon, Sun, Settings, HelpCircle, Plus, Github, Shiel
 import { useApp } from '../context/AppContext';
 
 export const Header: React.FC = () => {
-  const {
-    currentMarkdown,
-    settings,
-    updateSettings,
-    history,
-    setOpenSettings,
-    setOpenShortcuts,
-    setOpenHistory,
-    resetAll,
-  } = useApp();
+  const { currentMarkdown, isDark, toggleTheme, history, setOpenSettings, setOpenShortcuts, setOpenHistory, resetAll } =
+    useApp();
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl transition-colors">
@@ -76,12 +68,12 @@ export const Header: React.FC = () => {
 
           {/* Theme Toggle */}
           <button
-            onClick={() => updateSettings({ darkMode: !settings.darkMode })}
+            onClick={toggleTheme}
             className="p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-            title={settings.darkMode ? 'Switch to light mode (Ctrl+D)' : 'Switch to dark mode (Ctrl+D)'}
+            title={isDark ? 'Switch to light mode (Ctrl+D)' : 'Switch to dark mode (Ctrl+D)'}
             aria-label="Toggle theme"
           >
-            {settings.darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {/* Settings Trigger */}

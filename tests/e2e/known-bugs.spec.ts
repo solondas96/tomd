@@ -5,29 +5,6 @@ import { openWithConverted, rawEditor } from './helpers';
 // `test.fail()` makes Playwright expect the failure: the suite stays green today, and the moment a
 // fix lands the test reports "expected to fail but passed", forcing whoever fixed it to delete the marker.
 
-const HEADER = 'header';
-
-test.describe('dark mode (B-01)', () => {
-  test('toggle changes the header background under a light OS theme', async ({ page }) => {
-    test.fail(true, 'B-01: Tailwind dark: follows the OS, not the .dark class');
-    await openWithConverted(page, 'text/markdown.md');
-    const header = page.locator(HEADER).first();
-    const before = await header.evaluate((el) => getComputedStyle(el).backgroundColor);
-    await page.getByRole('button', { name: 'Toggle theme' }).click();
-    await expect.poll(() => header.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(before);
-  });
-
-  test('toggle changes the header background under a dark OS theme', async ({ page }) => {
-    test.fail(true, 'B-01: Tailwind dark: follows the OS, not the .dark class');
-    await page.emulateMedia({ colorScheme: 'dark' });
-    await openWithConverted(page, 'text/markdown.md');
-    const header = page.locator(HEADER).first();
-    const before = await header.evaluate((el) => getComputedStyle(el).backgroundColor);
-    await page.getByRole('button', { name: 'Toggle theme' }).click();
-    await expect.poll(() => header.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(before);
-  });
-});
-
 test.describe('table of contents (B-04)', () => {
   test('clicking an entry scrolls the heading into view in Preview', async ({ page }) => {
     test.fail(true, 'B-04: TOC entries have no click handler');

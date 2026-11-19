@@ -1,4 +1,4 @@
-import { AppSettings, HeadingSensitivity } from '../types';
+import { ThemePreference, type AppSettings, type HeadingSensitivity } from '../types';
 
 export const HISTORY_KEY = 'tomd_history_v2';
 export const SETTINGS_KEY = 'tomd_settings_v2';
@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   extractImages: false,
   ocr: false,
   ocrLanguage: 'eng',
-  darkMode: false,
+  theme: ThemePreference.System,
   frontmatter: false,
   syntaxHighlight: true,
 };

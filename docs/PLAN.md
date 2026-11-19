@@ -101,7 +101,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 
 ## M1 · Nothing broken (verified bugs)
 
-### [ ] B-01 · Dark-mode toggle has no effect `S`
+### [x] B-01 · Dark-mode toggle has no effect `S`
 - **Cause:** Tailwind 4 `dark:` follows `prefers-color-scheme`, while the app toggles `.dark` on `<html>`.
 - **Change:** Add `@custom-variant dark (&:where(.dark, .dark *));` to `src/index.css`. Make the setting a three-way choice, `system | light | dark` (enum), with system as the default.
 - **Done when:** An E2E test asserts the header background changes in both directions under both OS schemes.

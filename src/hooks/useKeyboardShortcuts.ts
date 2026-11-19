@@ -12,8 +12,8 @@ export function useKeyboardShortcuts() {
     redo,
     canUndo,
     canRedo,
-    settings,
-    updateSettings,
+    isDark,
+    toggleTheme,
     openSettings,
     setOpenSettings,
     openShortcuts,
@@ -86,9 +86,8 @@ export function useKeyboardShortcuts() {
 
       if (isCtrlOrCmd && e.key.toLowerCase() === 'd') {
         e.preventDefault();
-        const nextDark = !settings.darkMode;
-        updateSettings({ darkMode: nextDark });
-        addToast(nextDark ? 'Dark theme enabled' : 'Light theme enabled', 'info', 1500);
+        toggleTheme();
+        addToast(isDark ? 'Light theme enabled' : 'Dark theme enabled', 'info', 1500);
         return;
       }
 
@@ -108,8 +107,8 @@ export function useKeyboardShortcuts() {
     redo,
     canUndo,
     canRedo,
-    settings,
-    updateSettings,
+    isDark,
+    toggleTheme,
     openSettings,
     setOpenSettings,
     openShortcuts,

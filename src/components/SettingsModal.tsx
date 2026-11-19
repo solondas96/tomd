@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Settings, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { OCR_LANGUAGES } from '../config';
-import { HeadingSensitivity, PageSeparator } from '../types';
+import { HeadingSensitivity, PageSeparator, ThemePreference } from '../types';
 
 export const SettingsModal: React.FC = () => {
   const { openSettings, setOpenSettings, settings, updateSettings } = useApp();
@@ -40,6 +40,26 @@ export const SettingsModal: React.FC = () => {
 
           {/* Form Settings */}
           <div className="space-y-5 text-sm">
+            {/* Theme */}
+            <div>
+              <label
+                htmlFor="setting-theme"
+                className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 block mb-1"
+              >
+                Theme
+              </label>
+              <select
+                id="setting-theme"
+                value={settings.theme}
+                onChange={(e) => updateSettings({ theme: e.target.value as ThemePreference })}
+                className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value={ThemePreference.System}>System (follow OS)</option>
+                <option value={ThemePreference.Light}>Light</option>
+                <option value={ThemePreference.Dark}>Dark</option>
+              </select>
+            </div>
+
             {/* Heading sensitivity */}
             <div>
               <label

@@ -1,4 +1,8 @@
 @import "tailwindcss";
+
+/* Tailwind 4 defaults `dark:` to the OS setting; follow the `.dark` class so the in-app toggle works. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @import "@fontsource/plus-jakarta-sans/300.css";
 @import "@fontsource/plus-jakarta-sans/400.css";
 @import "@fontsource/plus-jakarta-sans/500.css";

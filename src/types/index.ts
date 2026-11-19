@@ -1,4 +1,9 @@
 export type HeadingSensitivity = 'low' | 'medium' | 'high';
+export enum ThemePreference {
+  System = 'system',
+  Light = 'light',
+  Dark = 'dark',
+}
 export type PageSeparator = '---' | 'blank' | 'none';
 
 export interface AppSettings {
@@ -9,7 +14,7 @@ export interface AppSettings {
   extractImages: boolean;
   ocr: boolean;
   ocrLanguage: string;
-  darkMode: boolean;
+  theme: ThemePreference;
   frontmatter: boolean;
   syntaxHighlight: boolean;
 }

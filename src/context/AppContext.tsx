@@ -20,11 +20,15 @@ import {
   FETCH_TIMEOUT_MS,
 } from '../config';
 import { wordCount, charCount, friendlyError, generateFrontmatter, triggerDownload, slugify } from '../lib/utils';
+import { useThemeClass } from '../hooks/useThemeClass';
+import { flippedPreference, migrateSettings } from '../lib/theme';
 import { convertFile, FormatId, findConverter, htmlPageToMarkdown, isSupported } from '../core';
 
 interface AppContextValue {
   settings: AppSettings;
   updateSettings: (patch: Partial<AppSettings>) => void;
+  isDark: boolean;
+  toggleTheme: () => void;
   currentMarkdown: string;
   updateMarkdown: (md: string) => void;
   currentFilename: string;
@@ -77,7 +81,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 function loadInitialSettings(): AppSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : DEFAULT_SETTINGS;
+    return raw ? migrateSettings(JSON.parse(raw)) : DEFAULT_SETTINGS;
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -124,19 +128,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [canRedo, setCanRedo] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Sync settings with HTML class and localStorage
+  // Persist settings
   useEffect(() => {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch (e) {
       console.warn('[toMD] Failed to save settings to localStorage:', e);
     }
-    if (settings.darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   }, [settings]);
+
+  const isDark = useThemeClass(settings.theme);
+  const toggleTheme = useCallback(() => {
+    const next = flippedPreference(isDark);
+    setSettings((prev) => ({ ...prev, theme: next }));
+  }, [isDark]);
 
   // Sync history with localStorage
   useEffect(() => {
@@ -544,6 +549,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         settings,
         updateSettings,
+        isDark,
+        toggleTheme,
         currentMarkdown,
         updateMarkdown,
         currentFilename,
