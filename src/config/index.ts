@@ -64,3 +64,18 @@ export const HEADING_THRESHOLDS: Record<HeadingSensitivity, number> = {
   medium: 1.1,
   high: 1.05,
 };
+
+/**
+ * Geometry thresholds for PDF layout analysis. Distances are fractions of the font size (em) so the
+ * same values work for any text size.
+ */
+export const PDF_LAYOUT = {
+  /** Runs whose baselines differ by at most this much belong to one line. */
+  LINE_Y_TOLERANCE_EM: 0.25,
+  /** Smallest line tolerance in points, for tiny text. */
+  MIN_LINE_Y_TOLERANCE_PT: 1,
+  /** A gap wider than this between runs starts a new span (a column, not a word space). */
+  SPAN_GAP_EM: 0.3,
+  /** A gap wider than this inside a span is rendered as a single space. */
+  WORD_GAP_EM: 0.15,
+} as const;

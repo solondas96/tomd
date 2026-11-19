@@ -1,5 +1,6 @@
 // Regenerates tests/fixtures/pdf/*.pdf from tests/fixtures/build/pdf-src/*.html using headless Chrome.
-// Usage: node tests/fixtures/build/build-pdfs.mjs   (set CHROME_PATH to override the browser binary)
+// Usage: node tests/fixtures/build/build-pdfs.mjs [name ...]   (set CHROME_PATH to override the browser binary)
+// With names, only those sources are rebuilt (e.g. `prose-inline`).
 //
 // The committed PDFs are the fixtures; golden tests never run Chrome. Re-run this only when adding
 // or editing a source page, and review the resulting golden diff.
@@ -64,7 +65,10 @@ function writeScanPng(path) {
 
 writeScanPng(join(sourceDir, 'scan.png'));
 
-for (const file of readdirSync(sourceDir).filter((name) => name.endsWith('.html'))) {
+const only = process.argv.slice(2);
+for (const file of readdirSync(sourceDir).filter(
+  (name) => name.endsWith('.html') && (only.length === 0 || only.includes(name.replace(/\.html$/, ''))),
+)) {
   const name = file.replace(/\.html$/, '');
   execFileSync(
     chrome,

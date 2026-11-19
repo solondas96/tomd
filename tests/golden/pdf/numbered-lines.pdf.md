@@ -6,6 +6,5 @@
 
 2024 was a record year for revenue 2025 is forecast to grow again 2026 looks strong for every team
 
-| 1. | First real step |
-| --- | --- |
-| 2. | Second real step |
+1. First real step
+2. Second real step

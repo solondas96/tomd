@@ -6,12 +6,11 @@ import { require2dContext } from '../../lib/utils';
 import { createOcrSession, type OcrSession } from '../../lib/vendor/ocr-session';
 import { loadPdfJs } from '../../lib/vendor/pdfjs';
 import { isListItemText } from '../listItem';
+import { classifyFont, PLAIN_STYLE } from '../pdf/fontStyle';
+import { renderFragments } from '../pdf/inline';
+import { buildLines } from '../pdf/lines';
+import type { FontStyle, Fragment, Line, TextRun } from '../pdf/types';
 import type { ConversionContext, ConverterInput } from '../types';
-
-interface LineGroup {
-  y: number;
-  items: TextItem[];
-}
 
 /**
  * Converts a PDF to Markdown using PDF.js text layout analysis (optionally OCR).
@@ -55,7 +54,8 @@ export async function convertPdf(file: ConverterInput, ctx: ConversionContext): 
         const page = await pdf.getPage(p);
         const vp = page.getViewport({ scale: 1 });
         const content = await page.getTextContent();
-        let md = pageToMarkdown(content, vp.height, opts);
+        await page.getOperatorList(); // loads the fonts, so their real names (Arial-Bold...) become readable
+        let md = pageToMarkdown(runsFromTextContent(content), fontStylesForPage(page, content), vp.height, opts);
 
         if (!md.trim() && opts.extractImages) {
           md = await renderPageAsImage(page);
@@ -102,72 +102,112 @@ export async function convertPdf(file: ConverterInput, ctx: ConversionContext): 
 
 // ── Text layout analysis ──────────────────────────────────────
 
-function pageToMarkdown(textContent: TextContent, pageHeight: number, opts: ConversionOptions): string {
-  const { items, styles } = textContent;
-  if (!items?.length) return '';
-  const visible = items.filter((it): it is TextItem => 'str' in it && it.str.trim().length > 0);
+/** Reads real font names (only available after the operator list is evaluated) into bold/italic flags. */
+function fontStylesForPage(page: PDFPageProxy, textContent: TextContent): (fontName: string) => FontStyle {
+  const styles = new Map<string, FontStyle>();
+  for (const fontId of Object.keys(textContent.styles)) {
+    if (!page.commonObjs.has(fontId)) continue;
+    const font = page.commonObjs.get(fontId) as { name?: string } | undefined;
+    if (font?.name) styles.set(fontId, classifyFont(font.name));
+  }
+  return (fontName) => styles.get(fontName) ?? PLAIN_STYLE;
+}
+
+function runsFromTextContent(textContent: TextContent): TextRun[] {
+  const runs: TextRun[] = [];
+  for (const item of textContent.items) {
+    if (!('str' in item)) continue;
+    runs.push({
+      text: item.str,
+      x: item.transform[4],
+      y: item.transform[5],
+      width: item.width,
+      fontSize: getFontSize(item),
+      fontName: item.fontName,
+    });
+  }
+  return runs;
+}
+
+function pageToMarkdown(
+  runs: TextRun[],
+  styleOf: (fontName: string) => FontStyle,
+  pageHeight: number,
+  opts: ConversionOptions,
+): string {
+  const visible = runs.filter((run) => run.text.trim().length > 0);
   if (!visible.length) return '';
 
   const columns = detectColumns(visible);
   if (columns) {
-    const left = processTextItems(columns.left, pageHeight, styles, opts);
-    const right = processTextItems(columns.right, pageHeight, styles, opts);
+    const left = processRuns(
+      runs.filter((run) => columns.left.includes(run)),
+      styleOf,
+      pageHeight,
+      opts,
+    );
+    const right = processRuns(
+      runs.filter((run) => columns.right.includes(run)),
+      styleOf,
+      pageHeight,
+      opts,
+    );
     return [left, right].filter(Boolean).join('\n\n');
   }
 
-  return processTextItems(visible, pageHeight, styles, opts);
+  return processRuns(runs, styleOf, pageHeight, opts);
 }
 
-function processTextItems(
-  items: TextItem[],
+function processRuns(
+  runs: TextRun[],
+  styleOf: (fontName: string) => FontStyle,
   pageHeight: number,
-  styles: Record<string, { fontFamily?: string }>,
   opts: ConversionOptions,
 ): string {
-  if (!items.length) return '';
-  const bodySize = modeSize(items.map(getFontSize));
-  let lines = groupByY(items);
-  lines.sort((a, b) => b.y - a.y);
+  const visible = runs.filter((run) => run.text.trim().length > 0);
+  if (!visible.length) return '';
+  const bodySize = modeSize(visible.map((run) => run.fontSize));
+  let lines = buildLines(runs, styleOf);
 
   if (opts.stripDecorations) {
     const margin = pageHeight * 0.04;
-    lines = lines.filter((g) => g.y > margin && g.y < pageHeight - margin);
+    lines = lines.filter((line) => line.y > margin && line.y < pageHeight - margin);
   }
 
   if (!lines.length) return '';
-  return assembleMarkdown(lines, bodySize, styles, opts);
+  return assembleMarkdown(lines, bodySize, opts);
 }
 
-function detectColumns(items: TextItem[]): { left: TextItem[]; right: TextItem[] } | null {
-  const xs = items.map((it) => it.transform[4]);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
+function detectColumns(runs: TextRun[]): { left: TextRun[]; right: TextRun[] } | null {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (const run of runs) {
+    minX = Math.min(minX, run.x);
+    maxX = Math.max(maxX, run.x);
+  }
   const pageWidth = maxX - minX;
   if (pageWidth < 200) return null;
 
   const midX = minX + pageWidth / 2;
   const gapMargin = pageWidth * 0.08;
-  const left = items.filter((it) => it.transform[4] < midX - gapMargin);
-  const right = items.filter((it) => it.transform[4] > midX + gapMargin);
+  const left = runs.filter((run) => run.x < midX - gapMargin);
+  const right = runs.filter((run) => run.x > midX + gapMargin);
 
   if (left.length < 10 || right.length < 10) return null;
 
-  const leftMaxX = Math.max(...left.map((it) => it.transform[4] + (it.width || 0)));
-  const rightMinX = Math.min(...right.map((it) => it.transform[4]));
+  let leftMaxX = -Infinity;
+  for (const run of left) leftMaxX = Math.max(leftMaxX, run.x + run.width);
+  let rightMinX = Infinity;
+  for (const run of right) rightMinX = Math.min(rightMinX, run.x);
   if (rightMinX - leftMaxX < pageWidth * 0.05) return null;
 
   return { left, right };
 }
 
-function assembleMarkdown(
-  lines: LineGroup[],
-  bodySize: number,
-  styles: Record<string, { fontFamily?: string }>,
-  opts: ConversionOptions,
-): string {
+function assembleMarkdown(lines: Line[], bodySize: number, opts: ConversionOptions): string {
   const thr = HEADING_THRESHOLDS[opts.headingSensitivity || 'medium'] || 1.1;
   const blocks: string[] = [];
-  const para: { text: string; bold: boolean }[] = [];
+  const para: Line[] = [];
   let prevY: number | null = null;
   let prevSize = bodySize;
   let i = 0;
@@ -192,26 +232,26 @@ function assembleMarkdown(
       }
     }
 
-    const g = lines[i];
-    const text = lineText(g);
-    if (!text) {
+    const line = lines[i];
+    const plain = renderFragments(lineFragments(line), false);
+    if (!plain) {
       i++;
       continue;
     }
 
-    const sz = lineMaxFontSize(g);
-    if (prevY !== null && prevY - g.y > prevSize * 1.35 * 1.65) {
+    const sz = line.fontSize;
+    if (prevY !== null && prevY - line.y > prevSize * 1.35 * 1.65) {
       flush();
     }
 
-    if (sz > bodySize * thr && text.length < 250) {
+    if (sz > bodySize * thr && plain.length < 250) {
       flush();
-      blocks.push('#'.repeat(headingLevel(sz, bodySize)) + ' ' + text);
+      blocks.push('#'.repeat(headingLevel(sz, bodySize)) + ' ' + plain);
     } else {
-      para.push({ text, bold: lineIsBold(g, styles) });
+      para.push(line);
     }
 
-    prevY = g.y;
+    prevY = line.y;
     prevSize = sz;
     i++;
   }
@@ -245,47 +285,11 @@ function modeSize(sizes: number[]): number {
   return best;
 }
 
-function groupByY(items: TextItem[]): LineGroup[] {
-  const groups: LineGroup[] = [];
-  for (const item of items) {
-    const y = item.transform[5];
-    let grp = groups.find((x) => Math.abs(x.y - y) <= 1.5);
-    if (!grp) {
-      grp = { y, items: [] };
-      groups.push(grp);
-    }
-    grp.items.push(item);
-  }
-  for (const g of groups) {
-    g.items.sort((a, b) => a.transform[4] - b.transform[4]);
-  }
-  return groups;
-}
-
-function lineText(group: LineGroup): string {
-  let r = '';
-  let lastX: number | null = null;
-  let lastW = 0;
-  for (const item of group.items) {
-    const x = item.transform[4];
-    if (lastX !== null && x - (lastX + lastW) > 2) r += ' ';
-    r += item.str;
-    lastX = x;
-    lastW = item.width || 0;
-  }
-  return r.replace(/\s+/g, ' ').trim();
-}
-
-function lineMaxFontSize(g: LineGroup): number {
-  return Math.max(...g.items.map(getFontSize));
-}
-
-function lineIsBold(group: LineGroup, styles: Record<string, { fontFamily?: string }>): boolean {
-  return group.items.some((item) => {
-    const f = (styles?.[item.fontName || '']?.fontFamily || '').toLowerCase();
-    const n = (item.fontName || '').toLowerCase();
-    return f.includes('bold') || n.includes('bold');
-  });
+/** All fragments of a line, with a plain space between its spans. */
+function lineFragments(line: Line): Fragment[] {
+  return line.spans.flatMap((span, index) =>
+    index === 0 ? span.fragments : [{ text: ' ', style: PLAIN_STYLE }, ...span.fragments],
+  );
 }
 
 function headingLevel(sz: number, bodySize: number): number {
@@ -304,9 +308,14 @@ function normaliseLine(text: string): string {
   return text;
 }
 
-function formatParagraph(lines: { text: string; bold: boolean }[]): string {
-  const normalized = lines.map(({ text }) => normaliseLine(text));
-  return normalized.every(isListItemText) ? normalized.join('\n') : normalized.join(' ').replace(/\s+/g, ' ').trim();
+function formatParagraph(lines: Line[]): string {
+  const normalized = lines.map((line) => normaliseLine(renderFragments(lineFragments(line), false)));
+  if (normalized.every(isListItemText)) return normalized.join('\n');
+  // Render all lines together so emphasis that continues across a line break is wrapped once.
+  const joined = lines.flatMap((line, index) =>
+    index === 0 ? lineFragments(line) : [{ text: ' ', style: PLAIN_STYLE }, ...lineFragments(line)],
+  );
+  return renderFragments(joined);
 }
 
 function clusterPositions(values: number[], tol: number): number[] {
@@ -321,22 +330,22 @@ function clusterPositions(values: number[], tol: number): number[] {
   return groups.map((g) => g[Math.floor(g.length / 2)]);
 }
 
-function tryExtractTable(lines: LineGroup[], start: number): { rows: string[][]; length: number } | null {
+function tryExtractTable(lines: Line[], start: number): { rows: string[][]; length: number } | null {
   if (start + 1 >= lines.length) return null;
   let end = start;
-  while (end < lines.length && lines[end].items.length >= 2) end++;
+  while (end < lines.length && lines[end].spans.length >= 2) end++;
   if (end - start < 2) return null;
 
   const candidates = lines.slice(start, end);
   const cols = clusterPositions(
-    candidates.flatMap((l) => l.items.map((it) => it.transform[4])),
+    candidates.flatMap((l) => l.spans.map((span) => span.x)),
     10,
   );
   if (cols.length < 2) return null;
 
   const valid = candidates.every((line) => {
     const matched = new Set(
-      line.items.map((it) => cols.findIndex((c) => Math.abs(c - it.transform[4]) <= 12)).filter((i) => i >= 0),
+      line.spans.map((span) => cols.findIndex((c) => Math.abs(c - span.x) <= 12)).filter((i) => i >= 0),
     );
     return matched.size >= 2;
   });
@@ -345,9 +354,9 @@ function tryExtractTable(lines: LineGroup[], start: number): { rows: string[][];
   return {
     rows: candidates.map((line) =>
       cols.map((col) =>
-        line.items
-          .filter((it) => Math.abs(it.transform[4] - col) <= 12)
-          .map((it) => it.str)
+        line.spans
+          .filter((span) => Math.abs(span.x - col) <= 12)
+          .map((span) => renderFragments(span.fragments, false))
           .join(' ')
           .trim(),
       ),

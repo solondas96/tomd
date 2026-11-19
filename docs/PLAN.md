@@ -163,7 +163,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 
 All Q-items must land with new or updated golden fixtures that demonstrate the fix.
 
-### [ ] Q-01 · PDF: merge style runs into inline Markdown `M` · deps: F-05
+### [x] Q-01 · PDF: merge style runs into inline Markdown `M` · deps: F-05
 - **Problem:** PDF.js splits a line into separate runs at every font change. This is the main cause of false tables, and bold/italic is detected but discarded.
 - **Change:** Within a line, merge adjacent runs whose horizontal gap is less than about 0.3× the font size into one text span. Wrap bold and italic runs in `**`/`*` (from font name or family), and normalise whitespace at the boundaries.
 - **Done when:** The prose fixture with inline bold/italic produces one paragraph containing `**bold phrase**` and `*italic word*`.
