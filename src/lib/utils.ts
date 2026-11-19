@@ -69,41 +69,18 @@ export function friendlyError(err: unknown): string {
   return typeof err === 'string' ? err : 'An unknown error occurred.';
 }
 
-const loadedScripts = new Map<string, Promise<void>>();
-
-export function loadScript(src: string, globalKey?: string, retries = 2): Promise<void> {
-  if (globalKey && (window as unknown as Record<string, unknown>)[globalKey]) {
-    return Promise.resolve();
-  }
-
-  const existing = loadedScripts.get(src);
-  if (existing) return existing;
-
-  const promise = (async () => {
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      let scriptEl: HTMLScriptElement | null = null;
-      try {
-        await new Promise<void>((resolve, reject) => {
-          scriptEl = document.createElement('script');
-          scriptEl.src = src;
-          scriptEl.async = true;
-          scriptEl.onload = () => resolve();
-          scriptEl.onerror = () => reject(new Error(`Failed to load ${src}`));
-          document.head.appendChild(scriptEl);
-        });
-        return;
-      } catch (err) {
-        if (scriptEl && (scriptEl as HTMLScriptElement).parentNode) {
-          (scriptEl as HTMLScriptElement).remove();
-        }
-        if (attempt === retries) throw err;
-        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-      }
-    }
-  })();
-
-  loadedScripts.set(src, promise);
-  return promise;
+/**
+ * Returns the 2D drawing context of a canvas.
+ *
+ * Purpose: replace nullable `getContext('2d')` calls with one explicit failure.
+ * Params: canvas - the canvas to draw on.
+ * Returns: its 2D rendering context.
+ * Throws: Error if the browser refuses to create a 2D context (e.g. out of memory).
+ */
+export function require2dContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Could not create a canvas context to render the page.');
+  return context;
 }
 
 export function fileToBase64(file: File | Blob): Promise<string> {

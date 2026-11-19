@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { require2dContext } from '../lib/utils';
+import { loadPdfJs } from '../lib/vendor/pdfjs';
 import { ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 
 export const SourcePdfViewer: React.FC = () => {
@@ -13,7 +15,7 @@ export const SourcePdfViewer: React.FC = () => {
     let cancelled = false;
 
     async function renderPdf() {
-      if (!sourceFile || !window.pdfjsLib) return;
+      if (!sourceFile) return;
       setLoading(true);
 
       try {
@@ -22,7 +24,8 @@ export const SourcePdfViewer: React.FC = () => {
         container.innerHTML = '';
 
         const buf = await sourceFile.arrayBuffer();
-        const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+        const pdfjs = await loadPdfJs();
+        const pdf = await pdfjs.getDocument({ data: buf }).promise;
         if (cancelled) return;
         setPageCount(pdf.numPages);
 
@@ -50,7 +53,7 @@ export const SourcePdfViewer: React.FC = () => {
           container.appendChild(wrapper);
 
           await page.render({
-            canvasContext: canvas.getContext('2d'),
+            canvasContext: require2dContext(canvas),
             viewport: vp,
           }).promise;
         }

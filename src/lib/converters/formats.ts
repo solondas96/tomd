@@ -1,34 +1,8 @@
 import TurndownService from 'turndown';
 import JSZip from 'jszip';
 import { ConversionResult, AppSettings } from '../../types';
-import { loadScript, fileToBase64, formatBytes } from '../utils';
-
-// Declare globals for dynamic libraries
-declare global {
-  interface Window {
-    mammoth?: {
-      convertToHtml: (options: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string; messages: string[] }>;
-    };
-    XLSX?: {
-      read: (
-        data: ArrayBuffer,
-        opts: { type: string },
-      ) => {
-        SheetNames: string[];
-        Sheets: Record<string, unknown>;
-      };
-      utils: {
-        sheet_to_json: (sheet: unknown, opts: { header: number }) => unknown[][];
-      };
-    };
-    Tesseract?: {
-      createWorker: (lang: string) => Promise<{
-        recognize: (img: File | HTMLCanvasElement) => Promise<{ data: { text: string } }>;
-        terminate: () => Promise<void>;
-      }>;
-    };
-  }
-}
+import { fileToBase64, formatBytes } from '../utils';
+import { createOcrWorker } from '../vendor/ocr';
 
 // ── GFM table rule for Turndown ───────────────────────────────
 
@@ -74,11 +48,10 @@ export async function convertDocx(
   file: File,
   onProgress: (pct: number, msg: string) => void,
 ): Promise<ConversionResult> {
-  await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js', 'mammoth');
+  const mammoth = await import('mammoth');
   onProgress(0.3, 'Parsing DOCX structure...');
   const buf = await file.arrayBuffer();
-  if (!window.mammoth) throw new Error('Mammoth library failed to load');
-  const result = await window.mammoth.convertToHtml({ arrayBuffer: buf });
+  const result = await mammoth.convertToHtml({ arrayBuffer: buf });
   onProgress(0.7, 'Transforming to Markdown...');
   const md = createTurndown().turndown(result.value);
   return { markdown: md, pageCount: 1, metadata: null };
@@ -117,15 +90,14 @@ export async function convertXlsx(
   file: File,
   onProgress: (pct: number, msg: string) => void,
 ): Promise<ConversionResult> {
-  await loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js', 'XLSX');
+  const XLSX = await import('xlsx');
   onProgress(0.3, 'Parsing spreadsheet...');
   const buf = await file.arrayBuffer();
-  if (!window.XLSX) throw new Error('SheetJS library failed to load');
-  const wb = window.XLSX.read(buf, { type: 'array' });
+  const wb = XLSX.read(buf, { type: 'array' });
   const parts: string[] = [];
 
   for (const name of wb.SheetNames) {
-    const data = window.XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1 });
+    const data = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1 });
     if (data.length) {
       parts.push(`## ${name}\n\n${arrayToMdTable(data)}`);
     }
@@ -227,13 +199,11 @@ export async function convertImage(
   settings: AppSettings,
 ): Promise<ConversionResult> {
   const lang = settings.ocrLanguage || 'eng';
-  let worker: Awaited<ReturnType<NonNullable<typeof window.Tesseract>['createWorker']>> | null = null;
+  let worker: Awaited<ReturnType<typeof createOcrWorker>> | null = null;
 
   try {
-    await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js', 'Tesseract');
-    if (!window.Tesseract) throw new Error('Tesseract OCR engine failed to load');
     onProgress(0.2, 'Initializing OCR engine...');
-    worker = await window.Tesseract.createWorker(lang);
+    worker = await createOcrWorker(lang);
     onProgress(0.4, 'Recognizing image text...');
     const {
       data: { text },

@@ -1,43 +1,14 @@
 import { HEADING_THRESHOLDS } from '../../config';
 import { ConversionOptions, ConversionResult, ConversionMetadata } from '../../types';
-import { loadScript } from '../utils';
-
-interface TextItem {
-  str: string;
-  transform: number[]; // [scaleX, skewY, skewX, scaleY, transX, transY]
-  width?: number;
-  height?: number;
-  fontName?: string;
-}
+import type { PDFPageProxy } from 'pdfjs-dist';
+import type { TextContent, TextItem } from 'pdfjs-dist/types/src/display/api';
+import { require2dContext } from '../utils';
+import { createOcrWorker } from '../vendor/ocr';
+import { loadPdfJs } from '../vendor/pdfjs';
 
 interface LineGroup {
   y: number;
   items: TextItem[];
-}
-
-// PDF.js types definition
-declare global {
-  interface Window {
-    pdfjsLib?: {
-      GlobalWorkerOptions: { workerSrc: string };
-      getDocument: (opts: { data: ArrayBuffer }) => {
-        promise: Promise<{
-          numPages: number;
-          getMetadata: () => Promise<{ info?: ConversionMetadata }>;
-          getPage: (pageNo: number) => Promise<{
-            getViewport: (opts: { scale: number }) => { width: number; height: number };
-            getTextContent: () => Promise<{
-              items: TextItem[];
-              styles: Record<string, { fontFamily?: string }>;
-            }>;
-            render: (opts: { canvasContext: CanvasRenderingContext2D | null; viewport: unknown }) => {
-              promise: Promise<void>;
-            };
-          }>;
-        }>;
-      };
-    };
-  }
 }
 
 export async function convertPdf(
@@ -52,16 +23,7 @@ export async function convertPdf(
     throw new Error('Could not read file. It may have been moved or deleted.');
   }
 
-  if (!(window as unknown as { pdfjsLib?: unknown }).pdfjsLib) {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'pdfjsLib');
-  }
-
-  const pdfjs = window.pdfjsLib;
-  if (!pdfjs) {
-    throw new Error('PDF.js library failed to load');
-  }
-
-  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdfjs = await loadPdfJs();
 
   const pdf = await pdfjs.getDocument({ data: buffer }).promise;
   const total = pdf.numPages;
@@ -71,7 +33,7 @@ export async function convertPdf(
   let metadata: ConversionMetadata | null = null;
 
   try {
-    metadata = (await pdf.getMetadata())?.info || null;
+    metadata = ((await pdf.getMetadata())?.info as ConversionMetadata | undefined) || null;
   } catch (err) {
     console.warn('[toMD] Could not read PDF metadata:', err);
   }
@@ -121,14 +83,10 @@ export async function convertPdf(
 
 // ── Text layout analysis ──────────────────────────────────────
 
-function pageToMarkdown(
-  textContent: { items: TextItem[]; styles: Record<string, { fontFamily?: string }> },
-  pageHeight: number,
-  opts: ConversionOptions,
-): string {
+function pageToMarkdown(textContent: TextContent, pageHeight: number, opts: ConversionOptions): string {
   const { items, styles } = textContent;
   if (!items?.length) return '';
-  const visible = items.filter((it) => it.str?.trim());
+  const visible = items.filter((it): it is TextItem => 'str' in it && it.str.trim().length > 0);
   if (!visible.length) return '';
 
   const columns = detectColumns(visible);
@@ -393,42 +351,27 @@ function tableToMarkdown(rows: string[][]): string {
 
 // ── Image / OCR Fallbacks ─────────────────────────────────────
 
-async function renderPageAsImage(page: {
-  getViewport: (opts: { scale: number }) => { width: number; height: number };
-  render: (opts: { canvasContext: CanvasRenderingContext2D | null; viewport: unknown }) => {
-    promise: Promise<void>;
-  };
-}): Promise<string> {
+async function renderPageAsImage(page: PDFPageProxy): Promise<string> {
   try {
     const vp = page.getViewport({ scale: 1.5 });
     const canvas = document.createElement('canvas');
     canvas.width = vp.width;
     canvas.height = vp.height;
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    await page.render({ canvasContext: require2dContext(canvas), viewport: vp }).promise;
     return `![Page](${canvas.toDataURL('image/jpeg', 0.82)})`;
   } catch {
     return '';
   }
 }
 
-async function ocrPage(
-  page: {
-    getViewport: (opts: { scale: number }) => { width: number; height: number };
-    render: (opts: { canvasContext: CanvasRenderingContext2D | null; viewport: unknown }) => {
-      promise: Promise<void>;
-    };
-  },
-  lang: string,
-): Promise<string> {
+async function ocrPage(page: PDFPageProxy, lang: string): Promise<string> {
   try {
-    await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js', 'Tesseract');
-    if (!window.Tesseract) return '';
     const vp = page.getViewport({ scale: 2 });
     const canvas = document.createElement('canvas');
     canvas.width = vp.width;
     canvas.height = vp.height;
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-    const worker = await window.Tesseract.createWorker(lang || 'eng');
+    await page.render({ canvasContext: require2dContext(canvas), viewport: vp }).promise;
+    const worker = await createOcrWorker(lang || 'eng');
     const {
       data: { text },
     } = await worker.recognize(canvas);

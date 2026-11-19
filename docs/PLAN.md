@@ -50,7 +50,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** ESLint flat config (typescript-eslint, react-hooks, jsx-a11y) and Prettier. Add `npm run lint` and `npm run typecheck`.
 - **Done when:** The repo lints clean. The rule set is committed and any suppressions are justified inline.
 
-### [ ] F-03 · Local dependencies instead of CDN globals `M` · deps: —
+### [x] F-03 · Local dependencies instead of CDN globals `M` · deps: —
 - **Problem:** PDF.js, Mammoth, SheetJS and Tesseract load from CDNs into `window.*` with hand-written types. This breaks offline use, pinning and the privacy claim.
 - **Change:**
   - Use `pdfjs-dist` (worker via Vite `?url`), `mammoth`, `xlsx` (pinned tarball from SheetJS) and `tesseract.js`, all as npm imports with dynamic `import()` per format.
