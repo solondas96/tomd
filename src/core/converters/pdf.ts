@@ -1,21 +1,26 @@
 import { HEADING_THRESHOLDS } from '../../config';
-import { ConversionOptions, ConversionResult, ConversionMetadata } from '../../types';
+import type { ConversionOptions, ConversionResult, ConversionMetadata } from '../../types';
 import type { PDFPageProxy } from 'pdfjs-dist';
 import type { TextContent, TextItem } from 'pdfjs-dist/types/src/display/api';
-import { require2dContext } from '../utils';
-import { createOcrWorker } from '../vendor/ocr';
-import { loadPdfJs } from '../vendor/pdfjs';
+import { require2dContext } from '../../lib/utils';
+import { createOcrWorker } from '../../lib/vendor/ocr';
+import { loadPdfJs } from '../../lib/vendor/pdfjs';
+import type { ConversionContext, ConverterInput } from '../types';
 
 interface LineGroup {
   y: number;
   items: TextItem[];
 }
 
-export async function convertPdf(
-  file: File,
-  onProgress: (pct: number, msg: string) => void,
-  opts: ConversionOptions,
-): Promise<ConversionResult> {
+/**
+ * Converts a PDF to Markdown using PDF.js text layout analysis (optionally OCR).
+ *
+ * Params: file - the PDF; ctx - options, abort signal and progress callback.
+ * Returns: Markdown, page count and document metadata.
+ * Throws: Error for unreadable or invalid PDFs; the signal's `AbortError` when cancelled.
+ */
+export async function convertPdf(file: ConverterInput, ctx: ConversionContext): Promise<ConversionResult> {
+  const opts = ctx.options;
   let buffer: ArrayBuffer;
   try {
     buffer = await file.arrayBuffer();
@@ -41,6 +46,8 @@ export async function convertPdf(
   const pagesToProcess = Math.max(1, to - from + 1);
 
   for (let p = from; p <= to; p++) {
+    // Outside the try below, so cancellation is not mistaken for a failed page.
+    ctx.signal.throwIfAborted();
     try {
       const page = await pdf.getPage(p);
       const vp = page.getViewport({ scale: 1 });
@@ -62,7 +69,10 @@ export async function convertPdf(
     }
 
     const currentProcessed = p - from + 1;
-    onProgress(currentProcessed / pagesToProcess, `Processed page ${currentProcessed} of ${pagesToProcess}...`);
+    ctx.onProgress({
+      fraction: currentProcessed / pagesToProcess,
+      message: `Processed page ${currentProcessed} of ${pagesToProcess}...`,
+    });
   }
 
   if (!pages.length) {

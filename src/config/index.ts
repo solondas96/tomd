@@ -37,35 +37,6 @@ export const OCR_LANGUAGES = [
   { code: 'rus', label: 'Russian' },
 ] as const;
 
-export const FORMAT_MAP: Record<string, string> = {
-  pdf: 'pdf',
-  docx: 'docx',
-  pptx: 'pptx',
-  xlsx: 'xlsx',
-  xls: 'xlsx',
-  csv: 'csv',
-  tsv: 'csv',
-  html: 'html',
-  htm: 'html',
-  epub: 'epub',
-  rtf: 'rtf',
-  txt: 'text',
-  md: 'text',
-  markdown: 'text',
-  tex: 'latex',
-  latex: 'latex',
-  xml: 'xml',
-  json: 'json',
-  png: 'image',
-  jpg: 'image',
-  jpeg: 'image',
-  webp: 'image',
-  gif: 'image',
-  bmp: 'image',
-  tiff: 'image',
-  tif: 'image',
-};
-
 export const HEADING_THRESHOLDS: Record<HeadingSensitivity, number> = {
   low: 1.3,
   medium: 1.1,

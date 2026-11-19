@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrayToMdTable, parseCsv } from '../../../src/lib/converters/formats';
+import { arrayToMdTable, parseCsv } from '../../../src/core/converters/formats';
 
 describe('parseCsv', () => {
   it('parses simple comma-separated rows', () => {

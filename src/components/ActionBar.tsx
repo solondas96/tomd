@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { wordCount, charCount, readingTime, downloadAs } from '../lib/utils';
-import { createDocxBlob } from '../lib/converters/formats';
+import { createDocxBlob } from '../lib/export/docx';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { TabType } from '../types';

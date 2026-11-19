@@ -60,7 +60,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Files:** `index.html`, `src/lib/converters/*`, `src/lib/utils.ts`, `src/components/SourcePdfViewer.tsx`, `package.json`.
 - **Done when:** Converting PDF, DOCX, XLSX and CSV makes zero requests to non-origin hosts, and each format loads as its own lazy chunk.
 
-### [ ] F-04 · Converter core + registry `M` · deps: F-03
+### [x] F-04 · Converter core + registry `M` · deps: F-03
 - **Problem:** The converters are coupled to the DOM and the UI. Batch has no cancellation, and the dispatcher is a hand-written switch.
 - **Change:**
   - Create `src/core/` with no React imports. Each converter implements:

@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { UploadCloud, FileText, FolderUp, Globe, Clipboard, ArrowRight, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { isSupported } from '../lib/converters';
+import { isSupported, supportedExtensions } from '../core';
 
 interface FileSystemEntry {
   isFile: boolean;
@@ -165,7 +165,9 @@ export const DropZone: React.FC = () => {
             multiple
             className="hidden"
             onChange={handleFileInputChange}
-            accept=".pdf,.docx,.pptx,.xlsx,.xls,.csv,.tsv,.html,.htm,.epub,.rtf,.txt,.md,.tex,.latex,.xml,.json,.png,.jpg,.jpeg,.webp,.gif,.bmp,.tiff,.tif"
+            accept={supportedExtensions()
+              .map((extension) => `.${extension}`)
+              .join(',')}
           />
 
           {/* Upload Icon Circle */}

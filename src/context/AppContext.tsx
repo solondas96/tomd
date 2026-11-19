@@ -17,12 +17,10 @@ import {
   MAX_MD_STORE,
   MAX_UNDO,
   MAX_FILE_SIZE,
-  FORMAT_MAP,
   FETCH_TIMEOUT_MS,
 } from '../config';
 import { wordCount, charCount, friendlyError, generateFrontmatter, triggerDownload, slugify } from '../lib/utils';
-import { convertFile, getFileExt, isSupported } from '../lib/converters';
-import { createTurndown } from '../lib/converters/formats';
+import { convertFile, FormatId, findConverter, htmlPageToMarkdown, isSupported } from '../core';
 
 interface AppContextValue {
   settings: AppSettings;
@@ -254,27 +252,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setProgressMsg(`Reading ${file.name}...`);
       abortControllerRef.current = new AbortController();
 
-      const ext = getFileExt(file);
-      const format = FORMAT_MAP[ext];
-      if (format === 'pdf') {
+      const abortSignal = abortControllerRef.current.signal;
+      if (findConverter(file)?.id === FormatId.Pdf) {
         setSourceFile(file);
       } else {
         setSourceFile(null);
       }
 
       try {
-        const result = await convertFile(
-          file,
-          format,
-          (pct, msg) => {
-            if (abortControllerRef.current?.signal.aborted) {
-              throw new DOMException('Aborted', 'AbortError');
-            }
-            setProgressPct(10 + Math.round(pct * 85));
-            setProgressMsg(msg);
+        const result = await convertFile(file, {
+          options: settings,
+          signal: abortSignal,
+          onProgress: ({ fraction, message }) => {
+            setProgressPct(10 + Math.round(fraction * 85));
+            setProgressMsg(message);
           },
-          settings,
-        );
+        });
 
         let finalMd = result.markdown;
         if (settings.frontmatter && result.metadata) {
@@ -330,15 +323,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: 'pending',
       }));
       setBatchItems(items);
+      const batchSignal = new AbortController().signal; // cancellation UI lands in B-08
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         setBatchItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, status: 'processing' } : it)));
 
         try {
-          const ext = getFileExt(item.file);
-          const format = FORMAT_MAP[ext];
-          const result = await convertFile(item.file, format, () => {}, settings);
+          const result = await convertFile(item.file, {
+            options: settings,
+            signal: batchSignal,
+            onProgress: () => {},
+          });
 
           let md = result.markdown;
           if (settings.frontmatter && result.metadata) {
@@ -438,12 +434,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProgressPct(60);
         setProgressMsg('Converting HTML to Markdown...');
 
-        const cleaned = html.replace(/<(script|style|nav|header|footer)[^>]*>[\s\S]*?<\/\1>/gi, '');
-        const body = cleaned.replace(/^[\s\S]*<body[^>]*>/i, '').replace(/<\/body>[\s\S]*$/i, '') || cleaned;
-        let md = createTurndown().turndown(body);
-
-        const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-        const title = titleMatch ? titleMatch[1].trim() : '';
+        const page = htmlPageToMarkdown(html);
+        let md = page.markdown;
+        const title = page.title;
         const filename = new URL(url).hostname + '.md';
         const meta: ConversionMetadata = { Title: title, Source: url };
 
