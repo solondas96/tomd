@@ -38,6 +38,7 @@ export const FindReplaceBar: React.FC = () => {
   }, [findQuery, isRegex, currentMarkdown]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- match list is derived state; B-07 reworks find, A-02 moves it out of effects
     if (openFind) runFind();
   }, [openFind, findQuery, isRegex, runFind]);
 
@@ -89,6 +90,7 @@ export const FindReplaceBar: React.FC = () => {
             value={findQuery}
             onChange={(e) => setFindQuery(e.target.value)}
             placeholder="Find text..."
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- find bar is opened by an explicit user action, so focusing it is expected
             autoFocus
             className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />

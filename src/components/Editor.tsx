@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Lock } from 'lucide-react';
 
@@ -17,10 +17,13 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange, className }) =>
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Sync external changes
-  useEffect(() => {
+  // Sync external changes. Adjusting state during render avoids the extra
+  // render pass an effect would cause (https://react.dev/learn/you-might-not-need-an-effect).
+  const [syncedValue, setSyncedValue] = useState(textValue);
+  if (syncedValue !== textValue) {
+    setSyncedValue(textValue);
     setLocalVal(textValue);
-  }, [textValue]);
+  }
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const next = e.target.value;
@@ -51,13 +54,14 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange, className }) =>
   return (
     <div className={`relative w-full h-full flex flex-col ${className || ''}`}>
       {!isEditMode && (
-        <div
+        <button
+          type="button"
           onClick={() => setIsEditMode(true)}
           className="absolute top-3 right-4 z-10 cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-900/80 dark:bg-zinc-100/80 text-white dark:text-zinc-900 backdrop-blur-xs opacity-70 hover:opacity-100 transition-opacity"
         >
           <Lock className="w-3 h-3" />
           <span>Click to edit</span>
-        </div>
+        </button>
       )}
 
       <textarea

@@ -152,6 +152,14 @@ export const DropZone: React.FC = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Choose files to convert, or drop them here"
           className={`relative group cursor-pointer rounded-3xl p-8 sm:p-14 border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center ${
             isDragOver
               ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/30 scale-[1.01] shadow-2xl shadow-indigo-500/10'

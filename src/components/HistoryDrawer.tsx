@@ -14,6 +14,7 @@ export const HistoryDrawer: React.FC = () => {
       <div className="fixed inset-0 z-50 overflow-hidden">
         {/* Backdrop */}
         <div
+          role="presentation"
           onClick={() => setOpenHistory(false)}
           className="absolute inset-0 bg-zinc-950/30 backdrop-blur-xs transition-opacity"
         />
