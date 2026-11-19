@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { marked, Renderer } from 'marked';
 import DOMPurify from 'dompurify';
 import { useApp } from '../context/AppContext';
@@ -34,16 +34,30 @@ export const Preview: React.FC<PreviewProps> = ({ content, className }) => {
     }
   }, [md]);
 
+  const scrollToHeadingSlug = useCallback((slug: string): void => {
+    const target = Array.from(containerRef.current?.querySelectorAll<HTMLElement>('[id]') ?? []).find(
+      (element) => element.id === headingElementId(slug),
+    );
+    target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, []);
+
+  // In-document links such as [Intro](#intro) use plain slugs (portable Markdown), while rendered
+  // ids are namespaced, so resolve them here instead of letting the browser look for `#intro`.
+  const handleLinkClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const anchor = (event.target as HTMLElement).closest('a');
+    const href = anchor?.getAttribute('href');
+    if (!href?.startsWith('#') || href.length === 1) return;
+    event.preventDefault();
+    scrollToHeadingSlug(decodeURIComponent(href.slice(1)));
+  };
+
   // Only react to jumps requested after this preview mounted, not a stale one from an earlier tab.
   const handledJumpNonce = useRef(headingJump?.nonce ?? 0);
   useEffect(() => {
     if (!headingJump || headingJump.nonce === handledJumpNonce.current) return;
     handledJumpNonce.current = headingJump.nonce;
-    const target = Array.from(containerRef.current?.querySelectorAll<HTMLElement>('[id]') ?? []).find(
-      (element) => element.id === headingElementId(headingJump.slug),
-    );
-    target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  }, [headingJump]);
+    scrollToHeadingSlug(headingJump.slug);
+  }, [headingJump, scrollToHeadingSlug]);
 
   if (!md.trim()) {
     return (
@@ -54,7 +68,12 @@ export const Preview: React.FC<PreviewProps> = ({ content, className }) => {
   }
 
   return (
-    <div ref={containerRef} className={`w-full h-full overflow-y-auto p-6 sm:p-10 ${className || ''}`}>
+    <div
+      ref={containerRef}
+      role="presentation"
+      onClick={handleLinkClick}
+      className={`w-full h-full overflow-y-auto p-6 sm:p-10 ${className || ''}`}
+    >
       <div
         className="prose prose-zinc dark:prose-invert max-w-4xl mx-auto
           prose-headings:scroll-mt-6 prose-headings:font-bold prose-headings:tracking-tight

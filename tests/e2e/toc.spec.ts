@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openWithConverted, rawEditor } from './helpers';
+import { openWithConverted, rawEditor, uploadFixtures } from './helpers';
 
 const DUPLICATE_HEADINGS_MD = Buffer.from(
   [
@@ -66,5 +66,21 @@ test.describe('table of contents (B-04)', () => {
     await openToc(page);
     await page.getByRole('button', { name: 'Part' }).nth(1).click();
     await expect(page.locator('h2#md-part-1')).toBeInViewport();
+  });
+});
+
+test.describe('merged document anchors (B-05)', () => {
+  test('merge output has no "{#" and TOC links scroll to their sections', async ({ page }) => {
+    await page.goto('/');
+    await uploadFixtures(page, 'text/long-document.md', 'csv/basic.csv');
+    await page.getByRole('button', { name: 'Merge All' }).click();
+    await expect(rawEditor(page)).toHaveValue(/# Merged Documents/);
+    expect(await rawEditor(page).inputValue()).not.toContain('{#');
+
+    await page.getByRole('button', { name: 'Preview' }).click();
+    const section = page.getByRole('heading', { name: 'basic.csv', level: 2 });
+    await expect(section).not.toBeInViewport();
+    await page.getByRole('link', { name: 'basic.csv' }).click();
+    await expect(section).toBeInViewport();
   });
 });

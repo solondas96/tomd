@@ -21,8 +21,9 @@ import {
   MAX_FILE_SIZE,
   FETCH_TIMEOUT_MS,
 } from '../config';
-import { wordCount, charCount, friendlyError, generateFrontmatter, triggerDownload, slugify } from '../lib/utils';
+import { wordCount, charCount, friendlyError, generateFrontmatter, triggerDownload } from '../lib/utils';
 import { useThemeClass } from '../hooks/useThemeClass';
+import { buildMergedMarkdown } from '../lib/merge';
 import { flippedPreference, migrateSettings } from '../lib/theme';
 import { convertFile, FormatId, findConverter, htmlPageToMarkdown, isSupported } from '../core';
 
@@ -526,9 +527,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const done = batchItems.filter((it) => it.status === 'done');
     if (!done.length) return;
 
-    const toc = done.map((it, i) => `${i + 1}. [${it.filename}](#${slugify(it.filename)})`).join('\n');
-    const body = done.map((it) => `## ${it.filename} {#${slugify(it.filename)}}\n\n${it.markdown}`).join('\n\n---\n\n');
-    const merged = `# Merged Documents\n\n${toc}\n\n---\n\n${body}`;
+    const merged = buildMergedMarkdown(done);
 
     setCurrentMarkdown(merged);
     setCurrentFilename('merged.md');

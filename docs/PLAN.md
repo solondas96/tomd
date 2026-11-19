@@ -123,7 +123,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
   - In Split view: do both.
 - **Done when:** An E2E test clicks a TOC entry and the target heading is in the viewport.
 
-### [ ] B-05 · Merged document anchors broken `S`
+### [x] B-05 · Merged document anchors broken `S`
 - **Cause:** `## name {#slug}` isn't supported by `marked`, so it renders literally.
 - **Change:** Emit a plain `## name` and rely on the B-04 slug ids. Use the same `slugify` for the TOC links and the heading ids, and de-duplicate repeated slugs.
 - **Done when:** Merge output has no `{#`, and the TOC links scroll to their sections.
