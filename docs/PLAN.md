@@ -140,7 +140,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Thread the `AbortSignal` through `ConversionContext`. Batch shares one controller and shows a cancel button. Terminate the Tesseract worker when the signal aborts.
 - **Done when:** Cancelling a 10-file batch stops within one file, and cancelling OCR stops within one page.
 
-### [ ] B-09 · Blank band under header in document view `S`
+### [x] B-09 · Blank band under header in document view `S`
 - **Change:** Fix the `sticky top-16` / `h-[calc(100vh-4rem)]` stacking in `App.tsx` and `ActionBar.tsx`.
 - **Done when:** The action bar sits directly under the header at 390 px, 1024 px and 1440 px widths (screenshot test).
 

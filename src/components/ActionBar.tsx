@@ -155,7 +155,10 @@ export const ActionBar: React.FC = () => {
   ];
 
   return (
-    <div className="w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md sticky top-16 z-20 px-4 py-2.5">
+    <div
+      data-testid="action-bar"
+      className="w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md shrink-0 z-20 px-4 py-2.5"
+    >
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Left: Document info & View tabs */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">

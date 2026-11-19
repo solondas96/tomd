@@ -27,10 +27,10 @@ export const AppContent: React.FC = () => {
   useClipboardPaste();
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors">
+    <div className="h-dvh flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors">
       <Header />
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 min-h-0 flex flex-col overflow-y-auto">
         {!currentMarkdown && !isBatchMode && (
           <div className="flex-1 flex items-center justify-center">
             <DropZone />
@@ -44,11 +44,11 @@ export const AppContent: React.FC = () => {
         )}
 
         {currentMarkdown && !isBatchMode && (
-          <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <ActionBar />
             <FindReplaceBar />
 
-            <div className="flex-1 relative overflow-hidden">
+            <div className="flex-1 min-h-0 relative overflow-hidden">
               {activeTab === 'raw' && <Editor />}
               {activeTab === 'preview' && <Preview />}
               {activeTab === 'split' && <SplitView />}
