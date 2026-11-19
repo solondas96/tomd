@@ -18,6 +18,7 @@ import { HistoryDrawer } from './components/HistoryDrawer';
 import { TableOfContents } from './components/TableOfContents';
 import { DocumentMetadata } from './components/DocumentMetadata';
 import { ToastContainer } from './components/ToastContainer';
+import { UpdatePrompt } from './components/UpdatePrompt';
 
 export const AppContent: React.FC = () => {
   const { currentMarkdown, isBatchMode, activeTab } = useApp();
@@ -71,6 +72,7 @@ export const AppContent: React.FC = () => {
       <HistoryDrawer />
       <DocumentMetadata />
       <ToastContainer />
+      <UpdatePrompt />
     </div>
   );
 };

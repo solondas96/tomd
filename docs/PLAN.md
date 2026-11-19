@@ -111,7 +111,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Install it, add `@plugin "@tailwindcss/typography";`, and check the long `prose-*` modifier list still renders correctly.
 - **Done when:** In Preview, an H1 is larger than body text and bold, and tables have borders (E2E computed-style assertion).
 
-### [ ] B-03 · PWA / offline is non-functional `S` · deps: F-03
+### [x] B-03 · PWA / offline is non-functional `S` · deps: F-03
 - **Cause:** `public/sw.js` is never registered and caches leftover `./js/*.js` paths.
 - **Change:** Replace it with `vite-plugin-pwa` (generated precache manifest, PNG icons, update prompt toast). Delete `public/sw.js`.
 - **Done when:** The site is installable (Lighthouse PWA checks pass), and a second load with the network off converts a PDF.
