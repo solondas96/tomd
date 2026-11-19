@@ -8,7 +8,8 @@ Convert PDF, DOCX, PPTX, XLSX, HTML, EPUB, images, and 10+ other formats to stru
 
 **No server. No uploads. No sign-up. Zero data leaves your device.**
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-solondas96.gitlab.io/tomd-6366f1?style=for-the-badge&logo=gitlab)](https://solondas96.gitlab.io/tomd/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-solondas96.github.io/tomd-22c55e?style=for-the-badge&logo=github)](https://solondas96.github.io/tomd/)
+[![GitLab Mirror](https://img.shields.io/badge/Mirror-solondas96.gitlab.io/tomd-6366f1?style=for-the-badge&logo=gitlab)](https://solondas96.gitlab.io/tomd/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-224_passing-brightgreen?style=for-the-badge)](#testing)
 
@@ -101,13 +102,13 @@ toMD is a zero-dependency, zero-build static web app. No bundlers, no frameworks
 
 ### Use Online
 
-Visit **[solondas96.gitlab.io/tomd](https://solondas96.gitlab.io/tomd/)** — no installation needed.
+Visit **[solondas96.github.io/tomd](https://solondas96.github.io/tomd/)** (or GitLab mirror at **[solondas96.gitlab.io/tomd](https://solondas96.gitlab.io/tomd/)**) — no installation needed.
 
 ### Run Locally
 
 ```bash
 # Clone the repo
-git clone https://gitlab.com/solondas96/tomd.git
+git clone https://github.com/solondas96/tomd.git
 cd tomd
 
 # Serve with any static HTTP server (needed for clipboard API / service worker)
