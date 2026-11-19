@@ -1,0 +1,4 @@
+Plain text line one.
+
+Line after a blank line — with unicode: café.
+

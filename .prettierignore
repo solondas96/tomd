@@ -6,3 +6,5 @@ docs
 *.md
 *.html
 *.css
+tests/fixtures
+tests/golden/*/

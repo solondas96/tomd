@@ -76,7 +76,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
   - Converters must call `signal.throwIfAborted()` at every page, slide or chapter boundary.
 - **Done when:** `src/lib/converters/index.ts` switch is gone; the UI only talks to the registry; converters are importable in Node tests.
 
-### [ ] F-05 · Golden-file test harness `M` · deps: F-01, F-04
+### [x] F-05 · Golden-file test harness `M` · deps: F-01, F-04
 - **Change:**
   - Add `tests/fixtures/<format>/<name>.<ext>` and `tests/golden/<format>/<name>.md`, plus a test that converts every fixture and diffs the output against its golden file.
   - `npm run golden:update` rewrites the golden files. Golden diffs must be reviewed in PRs.
