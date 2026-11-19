@@ -1,78 +1,82 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronUp, ChevronDown, X, Replace, ReplaceAll } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { escRegex } from '../lib/utils';
-import { FindMatch } from '../types';
+import { findMatches, replaceAllMatches, stepIndex } from '../lib/find';
 
 export const FindReplaceBar: React.FC = () => {
-  const { openFind, setOpenFind, currentMarkdown, updateMarkdown, isEditMode, addToast } = useApp();
+  const { openFind, setOpenFind, currentMarkdown, updateMarkdown, isEditMode, addToast, requestEditorSelection } =
+    useApp();
   const [findQuery, setFindQuery] = useState('');
   const [replaceQuery, setReplaceQuery] = useState('');
   const [isRegex, setIsRegex] = useState(false);
-  const [matches, setMatches] = useState<FindMatch[]>([]);
-  const [matchIdx, setMatchIdx] = useState(-1);
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [requestedIndex, setRequestedIndex] = useState(0);
 
-  const runFind = useCallback(() => {
-    if (!findQuery || !currentMarkdown) {
-      setMatches([]);
-      setMatchIdx(-1);
-      return;
-    }
+  const options = useMemo(() => ({ isRegex, caseSensitive }), [isRegex, caseSensitive]);
+  const { matches, error } = useMemo(
+    () => findMatches(currentMarkdown, findQuery, options),
+    [currentMarkdown, findQuery, options],
+  );
+  // The document can shrink under us (replace, edit), so clamp instead of trusting the stored index.
+  const matchIdx = matches.length === 0 ? -1 : Math.min(requestedIndex, matches.length - 1);
+  const activeMatch = matchIdx >= 0 ? matches[matchIdx] : null;
+  const activeStart = activeMatch?.index;
+  const activeEnd = activeMatch ? activeMatch.index + activeMatch.length : undefined;
 
-    try {
-      const re = isRegex ? new RegExp(findQuery, 'gi') : new RegExp(escRegex(findQuery), 'gi');
-      const found: FindMatch[] = [];
-      const matchAll = currentMarkdown.matchAll(re);
-      for (const m of matchAll) {
-        if (m.index !== undefined) {
-          found.push({ index: m.index, length: m[0].length });
-        }
-      }
-      setMatches(found);
-      setMatchIdx(found.length > 0 ? 0 : -1);
-    } catch {
-      setMatches([]);
-      setMatchIdx(-1);
-    }
-  }, [findQuery, isRegex, currentMarkdown]);
-
+  // Selecting the current match is how the editor "navigates": it sets the selection and scrolls.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- match list is derived state; B-07 reworks find, A-02 moves it out of effects
-    if (openFind) runFind();
-  }, [openFind, findQuery, isRegex, runFind]);
+    if (openFind && activeStart !== undefined && activeEnd !== undefined)
+      requestEditorSelection(activeStart, activeEnd);
+  }, [openFind, activeStart, activeEnd, requestEditorSelection]);
 
+  const resetToFirstMatch = () => setRequestedIndex(0);
   const moveIdx = (delta: number) => {
-    if (!matches.length) return;
-    setMatchIdx((prev) => (prev + delta + matches.length) % matches.length);
+    if (matches.length === 0) return;
+    setRequestedIndex(stepIndex(matchIdx, delta, matches.length));
+  };
+
+  const handleFindKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    moveIdx(event.shiftKey ? -1 : 1);
   };
 
   const handleReplaceOne = () => {
-    if (matchIdx < 0 || !isEditMode || !matches[matchIdx]) {
-      if (!isEditMode) addToast('Enable edit mode first to replace text', 'info');
+    if (!isEditMode) {
+      addToast('Enable edit mode first to replace text', 'info');
       return;
     }
-    const m = matches[matchIdx];
-    const next = currentMarkdown.slice(0, m.index) + replaceQuery + currentMarkdown.slice(m.index + m.length);
-    updateMarkdown(next);
+    if (!activeMatch) return;
+    updateMarkdown(
+      currentMarkdown.slice(0, activeMatch.index) +
+        replaceQuery +
+        currentMarkdown.slice(activeMatch.index + activeMatch.length),
+    );
   };
 
   const handleReplaceAll = () => {
-    if (!findQuery || !isEditMode) {
-      if (!isEditMode) addToast('Enable edit mode first to replace text', 'info');
+    if (!isEditMode) {
+      addToast('Enable edit mode first to replace text', 'info');
       return;
     }
-    try {
-      const re = isRegex ? new RegExp(findQuery, 'gi') : new RegExp(escRegex(findQuery), 'gi');
-      const count = (currentMarkdown.match(re) || []).length;
-      const next = currentMarkdown.replace(re, replaceQuery);
-      updateMarkdown(next);
-      addToast(`Replaced ${count} occurrences`, 'success');
-      setOpenFind(false);
-    } catch {
-      addToast('Invalid regular expression', 'error');
+    if (!findQuery) return;
+    const result = replaceAllMatches(currentMarkdown, findQuery, options, replaceQuery);
+    if (result.error) {
+      addToast(result.error, 'error');
+      return;
     }
+    updateMarkdown(result.text);
+    addToast(`Replaced ${result.count} occurrences`, 'success');
+    setOpenFind(false);
   };
+
+  const toggleClass = (active: boolean) =>
+    `px-2 py-1.5 rounded-lg font-mono text-xs font-bold border transition-colors ${
+      active
+        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 border-indigo-300 dark:border-indigo-700'
+        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700'
+    }`;
 
   if (!openFind) return null;
 
@@ -88,11 +92,22 @@ export const FindReplaceBar: React.FC = () => {
           <input
             type="text"
             value={findQuery}
-            onChange={(e) => setFindQuery(e.target.value)}
+            onChange={(e) => {
+              setFindQuery(e.target.value);
+              resetToFirstMatch();
+            }}
+            onKeyDown={handleFindKeyDown}
+            aria-label="Find"
+            aria-invalid={error !== null && findQuery !== ''}
+            aria-describedby="find-status"
             placeholder="Find text..."
             // eslint-disable-next-line jsx-a11y/no-autofocus -- find bar is opened by an explicit user action, so focusing it is expected
             autoFocus
-            className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className={`w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 ${
+              error
+                ? 'border-rose-500 focus:ring-rose-500'
+                : 'border-zinc-200 dark:border-zinc-800 focus:ring-indigo-500'
+            }`}
           />
         </div>
 
@@ -101,33 +116,61 @@ export const FindReplaceBar: React.FC = () => {
             type="text"
             value={replaceQuery}
             onChange={(e) => setReplaceQuery(e.target.value)}
+            aria-label="Replace with"
             placeholder="Replace with..."
             className="w-full px-3 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
 
-        {/* Regex toggle */}
+        {/* Match options */}
         <button
-          onClick={() => setIsRegex(!isRegex)}
-          className={`px-2 py-1.5 rounded-lg font-mono text-xs font-bold border transition-colors ${
-            isRegex
-              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 border-indigo-300 dark:border-indigo-700'
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700'
-          }`}
+          type="button"
+          onClick={() => {
+            setCaseSensitive(!caseSensitive);
+            resetToFirstMatch();
+          }}
+          aria-pressed={caseSensitive}
+          className={toggleClass(caseSensitive)}
+          title="Match case"
+          aria-label="Match case"
+        >
+          Aa
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setIsRegex(!isRegex);
+            resetToFirstMatch();
+          }}
+          aria-pressed={isRegex}
+          className={toggleClass(isRegex)}
           title="Match Regular Expression"
+          aria-label="Regular expression"
         >
           .*
         </button>
 
-        {/* Counter */}
-        <span className="text-zinc-400 font-mono px-2 min-w-[50px] text-center">
-          {matches.length > 0 ? `${matchIdx + 1}/${matches.length}` : findQuery ? '0 matches' : ''}
+        {/* Status */}
+        <span
+          id="find-status"
+          role="status"
+          className={`font-mono px-2 min-w-[50px] text-center ${error && findQuery ? 'text-rose-500' : 'text-zinc-400'}`}
+        >
+          {error && findQuery
+            ? error
+            : matches.length > 0
+              ? `${matchIdx + 1}/${matches.length}`
+              : findQuery
+                ? '0 matches'
+                : ''}
         </span>
 
         {/* Navigation */}
         <div className="flex items-center gap-1">
           <button
+            type="button"
             onClick={() => moveIdx(-1)}
+            aria-label="Previous match"
             disabled={!matches.length}
             className="p-1 rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30"
             title="Previous match"
@@ -135,7 +178,9 @@ export const FindReplaceBar: React.FC = () => {
             <ChevronUp className="w-4 h-4" />
           </button>
           <button
+            type="button"
             onClick={() => moveIdx(1)}
+            aria-label="Next match"
             disabled={!matches.length}
             className="p-1 rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30"
             title="Next match"
@@ -147,7 +192,7 @@ export const FindReplaceBar: React.FC = () => {
         {/* Replace Buttons */}
         <button
           onClick={handleReplaceOne}
-          disabled={matchIdx < 0 || !isEditMode}
+          disabled={!activeMatch || !isEditMode}
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-semibold bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 disabled:opacity-40"
         >
           <Replace className="w-3.5 h-3.5" />

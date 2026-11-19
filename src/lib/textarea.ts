@@ -46,10 +46,11 @@ function measureOffsetTop(textarea: HTMLTextAreaElement, index: number): number 
 /**
  * Selects a character range in a textarea and scrolls it into view.
  *
- * Params: textarea - the target; start/end - selection offsets into its value.
+ * Params: textarea - the target; start/end - selection offsets into its value;
+ *   focus - move keyboard focus to the textarea (false keeps it where it is, e.g. in the find box).
  */
-export function selectAndReveal(textarea: HTMLTextAreaElement, start: number, end: number): void {
-  textarea.focus({ preventScroll: true });
+export function selectAndReveal(textarea: HTMLTextAreaElement, start: number, end: number, focus = true): void {
+  if (focus) textarea.focus({ preventScroll: true });
   textarea.setSelectionRange(start, end);
   textarea.scrollTop = Math.max(0, measureOffsetTop(textarea, start) - REVEAL_TOP_MARGIN_PX);
 }

@@ -132,7 +132,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Parse slide XML with `DOMParser` and read text via `getElementsByTagNameNS` instead of a regex, so entities decode and `<a:t xml:space>` variants are handled.
 - **Done when:** The golden output for `R&amp;D` is `R&D`.
 
-### [ ] B-07 · Find doesn't navigate to matches `S`
+### [x] B-07 · Find doesn't navigate to matches `S`
 - **Change:** On match change, call `textarea.setSelectionRange` and scroll the match into view. Enter goes to the next match and Shift+Enter to the previous one. Add a case-sensitive toggle. Show an invalid-regex state inline rather than silently returning 0.
 - **Done when:** An E2E test pressing "next" moves the selection.
 

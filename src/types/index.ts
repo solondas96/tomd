@@ -92,6 +92,14 @@ export interface HeadingJump {
   nonce: number;
 }
 
+/** Request to select a character range in the editor without moving keyboard focus. */
+export interface SelectionRequest {
+  start: number;
+  end: number;
+  /** Increments on every request so selecting the same range twice still fires. */
+  nonce: number;
+}
+
 export interface FindMatch {
   index: number;
   length: number;

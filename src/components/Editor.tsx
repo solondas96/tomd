@@ -10,7 +10,7 @@ interface EditorProps {
 }
 
 export const Editor: React.FC<EditorProps> = ({ value, onChange, className }) => {
-  const { currentMarkdown, updateMarkdown, isEditMode, setIsEditMode, headingJump } = useApp();
+  const { currentMarkdown, updateMarkdown, isEditMode, setIsEditMode, headingJump, selectionRequest } = useApp();
   const textValue = value !== undefined ? value : currentMarkdown;
   const handleChange = onChange || updateMarkdown;
 
@@ -35,6 +35,14 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange, className }) =>
     const range = lineRange(textarea.value, headingJump.line);
     if (range) selectAndReveal(textarea, range[0], range[1]);
   }, [headingJump]);
+
+  const handledSelectionNonce = useRef(selectionRequest?.nonce ?? 0);
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!selectionRequest || selectionRequest.nonce === handledSelectionNonce.current || !textarea) return;
+    handledSelectionNonce.current = selectionRequest.nonce;
+    selectAndReveal(textarea, selectionRequest.start, selectionRequest.end, false);
+  }, [selectionRequest]);
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const next = e.target.value;

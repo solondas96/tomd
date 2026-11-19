@@ -10,6 +10,7 @@ import {
   TabType,
   HeadingItem,
   HeadingJump,
+  SelectionRequest,
 } from '../types';
 import {
   DEFAULT_SETTINGS,
@@ -66,6 +67,8 @@ interface AppContextValue {
   setOpenFind: (v: boolean) => void;
   openToc: boolean;
   headingJump: HeadingJump | null;
+  selectionRequest: SelectionRequest | null;
+  requestEditorSelection: (start: number, end: number) => void;
   jumpToHeading: (heading: HeadingItem) => void;
   setOpenToc: (v: boolean) => void;
   openMetadata: boolean;
@@ -125,6 +128,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [openFind, setOpenFind] = useState<boolean>(false);
   const [openToc, setOpenToc] = useState<boolean>(false);
   const [headingJump, setHeadingJump] = useState<HeadingJump | null>(null);
+  const [selectionRequest, setSelectionRequest] = useState<SelectionRequest | null>(null);
+  const requestEditorSelection = useCallback((start: number, end: number) => {
+    setSelectionRequest((previous) => ({ start, end, nonce: (previous?.nonce ?? 0) + 1 }));
+  }, []);
   const jumpToHeading = useCallback((heading: HeadingItem) => {
     setHeadingJump((previous) => ({ line: heading.line, slug: heading.slug, nonce: (previous?.nonce ?? 0) + 1 }));
   }, []);
@@ -592,6 +599,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setOpenFind,
         openToc,
         headingJump,
+        selectionRequest,
+        requestEditorSelection,
         jumpToHeading,
         setOpenToc,
         openMetadata,
