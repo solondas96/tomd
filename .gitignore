@@ -18,3 +18,5 @@ desktop.ini
 
 # Local server leftovers
 __pycache__/
+test-results/
+playwright-report/

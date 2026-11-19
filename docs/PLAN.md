@@ -89,7 +89,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Note:** The audit fixtures (`doc.html`→PDF, `deck.pptx`, `data.csv`) are a starting set. Generate PDFs from HTML deterministically with a script in `tests/fixtures/build/`.
 - **Done when:** CI fails on any golden diff. Golden files reflect today's behaviour, and the known-bad outputs are marked in `tests/golden/KNOWN_ISSUES.md` with the Q-item that fixes each one.
 
-### [ ] F-06 · E2E smoke suite + CI gate `M` · deps: F-01
+### [x] F-06 · E2E smoke suite + CI gate `M` · deps: F-01
 - **Change:** Playwright tests for:
   - Upload → convert → Raw/Preview/Split/Source tabs
   - Dark-mode toggle, TOC navigation, find/next
