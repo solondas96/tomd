@@ -125,3 +125,18 @@ describe('cancellation', () => {
     expect(seen.some((message) => message.startsWith('Chapter 2/'))).toBe(false);
   });
 });
+
+describe('PPTX robustness (B-06)', () => {
+  it('reports an unreadable slide in the output and keeps converting the rest', async () => {
+    const zip = new JSZip();
+    zip.file('ppt/slides/slide1.xml', '<a:p><a:t>broken');
+    zip.file(
+      'ppt/slides/slide2.xml',
+      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><a:p><a:r><a:t>Fine</a:t></a:r></a:p></p:sld>',
+    );
+    const file = new File([await zip.generateAsync({ type: 'arraybuffer' })], 'deck.pptx');
+    const result = await convertFile(file, makeContext());
+    expect(result.markdown).toContain('⚠ Slide 1 could not be read');
+    expect(result.markdown).toContain('Fine');
+  });
+});

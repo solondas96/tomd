@@ -128,7 +128,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Emit a plain `## name` and rely on the B-04 slug ids. Use the same `slugify` for the TOC links and the heading ids, and de-duplicate repeated slugs.
 - **Done when:** Merge output has no `{#`, and the TOC links scroll to their sections.
 
-### [ ] B-06 · PPTX outputs XML entities `S` · deps: F-04
+### [x] B-06 · PPTX outputs XML entities `S` · deps: F-04
 - **Change:** Parse slide XML with `DOMParser` and read text via `getElementsByTagNameNS` instead of a regex, so entities decode and `<a:t xml:space>` variants are handled.
 - **Done when:** The golden output for `R&amp;D` is `R&D`.
 

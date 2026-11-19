@@ -3,6 +3,7 @@ import type { ConversionResult } from '../../types';
 import { fileToBase64, formatBytes } from '../../lib/utils';
 import { createOcrWorker } from '../../lib/vendor/ocr';
 import { createTurndown } from '../html';
+import { extractSlideParagraphs } from '../ooxml';
 import type { ConversionContext, ConverterInput } from '../types';
 
 // ── DOCX ──────────────────────────────────────────────────────
@@ -28,11 +29,13 @@ export async function convertPptx(file: ConverterInput, ctx: ConversionContext):
 
   while (zip.file(`ppt/slides/slide${i}.xml`)) {
     ctx.signal.throwIfAborted();
-    const fileRef = zip.file(`ppt/slides/slide${i}.xml`);
-    if (fileRef) {
-      const xml = await fileRef.async('text');
-      const texts = [...xml.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => m[1]).filter(Boolean);
-      if (texts.length) slides.push(texts.join('\n'));
+    const xml = await zip.file(`ppt/slides/slide${i}.xml`)!.async('text');
+    try {
+      const paragraphs = extractSlideParagraphs(xml);
+      if (paragraphs.length) slides.push(paragraphs.join('\n'));
+    } catch (error) {
+      // One unreadable slide must not lose the deck; say so in the output instead.
+      slides.push(`> ⚠ Slide ${i} could not be read: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
     i++;
     ctx.onProgress({ fraction: 0.2 + 0.7 * (i / (i + 5)), message: `Slide ${i - 1}...` });

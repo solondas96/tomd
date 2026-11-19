@@ -27,7 +27,7 @@ IDs marked **(proposed)** are not in `docs/PLAN.md` yet.
 
 | Fixture | Problem | Fix |
 |---|---|---|
-| `pptx/basic.pptx` | XML entities leak (`R&amp;D`, `&lt;draft&gt;`); the title is plain text rather than `## Title`; speaker notes are dropped. | B-06, Q-11 |
+| `pptx/basic.pptx` | The title is plain text rather than `## Title`; speaker notes are dropped. | Q-11 |
 | `pptx/reordered.pptx` | Slides come out in file-name order, not presentation order (Opening must come first). | Q-11 |
 | `epub/spine-order.epub` | Chapters come out in alphabetical file order, not spine order; title and author metadata are dropped. | Q-10 |
 | `rtf/basic.rtf` | The font table leaks into the text (`Arial;;;Hello`); a stray leading space remains on paragraph two; `\b`/`\i` are discarded rather than emitted as emphasis. | Q-12 |

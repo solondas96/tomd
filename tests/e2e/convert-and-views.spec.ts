@@ -54,4 +54,10 @@ test.describe('upload, convert and view tabs', () => {
     await uploadFixtures(page, 'csv/basic.csv');
     await expect(rawEditor(page)).toHaveValue(/\| name \|/);
   });
+
+  test('decodes XML entities in PPTX slides (B-06)', async ({ page }) => {
+    await openWithConverted(page, 'pptx/basic.pptx');
+    await expect(rawEditor(page)).toHaveValue(/R&D Roadmap/);
+    await expect(rawEditor(page)).not.toHaveValue(/&amp;/);
+  });
 });

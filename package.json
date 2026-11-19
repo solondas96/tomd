@@ -39,6 +39,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.0.6",
     "@types/dompurify": "^3.0.5",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
