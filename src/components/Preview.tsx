@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
-import { marked } from 'marked';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { marked, Renderer } from 'marked';
 import DOMPurify from 'dompurify';
 import { useApp } from '../context/AppContext';
+import { createSlugger, headingElementId, plainHeadingText } from '../lib/headings';
 
 interface PreviewProps {
   content?: string;
@@ -9,13 +10,20 @@ interface PreviewProps {
 }
 
 export const Preview: React.FC<PreviewProps> = ({ content, className }) => {
-  const { currentMarkdown } = useApp();
+  const { currentMarkdown, headingJump } = useApp();
+  const containerRef = useRef<HTMLDivElement>(null);
   const md = content !== undefined ? content : currentMarkdown;
 
   const html = useMemo(() => {
     if (!md.trim()) return '';
     try {
-      const parsed = marked.parse(md, { gfm: true, breaks: true }) as string;
+      // Ids come from the same slugger the TOC uses, so TOC links and heading ids always agree.
+      const slugFor = createSlugger();
+      const renderer = new Renderer();
+      renderer.heading = function ({ tokens, depth, text }) {
+        return `<h${depth} id="${headingElementId(slugFor(plainHeadingText(text)))}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
+      };
+      const parsed = marked.parse(md, { gfm: true, breaks: true, renderer }) as string;
       return DOMPurify.sanitize(parsed, {
         USE_PROFILES: { html: true },
         ADD_ATTR: ['target', 'rel'],
@@ -26,6 +34,17 @@ export const Preview: React.FC<PreviewProps> = ({ content, className }) => {
     }
   }, [md]);
 
+  // Only react to jumps requested after this preview mounted, not a stale one from an earlier tab.
+  const handledJumpNonce = useRef(headingJump?.nonce ?? 0);
+  useEffect(() => {
+    if (!headingJump || headingJump.nonce === handledJumpNonce.current) return;
+    handledJumpNonce.current = headingJump.nonce;
+    const target = Array.from(containerRef.current?.querySelectorAll<HTMLElement>('[id]') ?? []).find(
+      (element) => element.id === headingElementId(headingJump.slug),
+    );
+    target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [headingJump]);
+
   if (!md.trim()) {
     return (
       <div className="w-full h-full flex items-center justify-center p-8 text-zinc-400 text-sm italic">
@@ -35,10 +54,10 @@ export const Preview: React.FC<PreviewProps> = ({ content, className }) => {
   }
 
   return (
-    <div className={`w-full h-full overflow-y-auto p-6 sm:p-10 ${className || ''}`}>
+    <div ref={containerRef} className={`w-full h-full overflow-y-auto p-6 sm:p-10 ${className || ''}`}>
       <div
         className="prose prose-zinc dark:prose-invert max-w-4xl mx-auto
-          prose-headings:font-bold prose-headings:tracking-tight
+          prose-headings:scroll-mt-6 prose-headings:font-bold prose-headings:tracking-tight
           prose-h1:text-2xl sm:prose-h1:text-3xl prose-h1:border-b prose-h1:border-zinc-200 dark:prose-h1:border-zinc-800 prose-h1:pb-3 prose-h1:mb-6
           prose-h2:text-xl sm:prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
           prose-h3:text-lg sm:prose-h3:text-xl

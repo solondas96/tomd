@@ -78,7 +78,18 @@ export type TabType = 'raw' | 'preview' | 'split' | 'source';
 export interface HeadingItem {
   level: number;
   text: string;
+  /** Zero-based line of the heading in the Markdown source. */
   line: number;
+  /** Unique element id of the heading in the rendered Preview. */
+  slug: string;
+}
+
+/** Request to reveal a heading in whichever of the editor and preview are mounted. */
+export interface HeadingJump {
+  line: number;
+  slug: string;
+  /** Increments on every request so jumping to the same heading twice still fires. */
+  nonce: number;
 }
 
 export interface FindMatch {

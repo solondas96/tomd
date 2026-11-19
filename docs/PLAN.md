@@ -116,7 +116,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Replace it with `vite-plugin-pwa` (generated precache manifest, PNG icons, update prompt toast). Delete `public/sw.js`.
 - **Done when:** The site is installable (Lighthouse PWA checks pass), and a second load with the network off converts a PDF.
 
-### [ ] B-04 · TOC entries are not clickable `S`
+### [x] B-04 · TOC entries are not clickable `S`
 - **Change:** Clicking an entry should:
   - In Raw view: set the selection to the heading's line and scroll it into view.
   - In Preview: scroll to the heading by slug id (add ids via a `marked` heading renderer).

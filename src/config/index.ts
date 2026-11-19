@@ -37,6 +37,9 @@ export const OCR_LANGUAGES = [
   { code: 'rus', label: 'Russian' },
 ] as const;
 
+/** Deepest heading level listed in the table of contents. */
+export const TOC_MAX_LEVEL = 4;
+
 export const HEADING_THRESHOLDS: Record<HeadingSensitivity, number> = {
   low: 1.3,
   medium: 1.1,

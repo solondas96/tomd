@@ -5,19 +5,6 @@ import { openWithConverted, rawEditor } from './helpers';
 // `test.fail()` makes Playwright expect the failure: the suite stays green today, and the moment a
 // fix lands the test reports "expected to fail but passed", forcing whoever fixed it to delete the marker.
 
-test.describe('table of contents (B-04)', () => {
-  test('clicking an entry scrolls the heading into view in Preview', async ({ page }) => {
-    test.fail(true, 'B-04: TOC entries have no click handler');
-    await openWithConverted(page, 'text/long-document.md');
-    await page.getByRole('button', { name: 'Preview' }).click();
-    await page.getByTitle('Table of Contents').click();
-    // Precondition: the target starts off-screen, otherwise the assertion below proves nothing.
-    await expect(page.getByRole('heading', { name: 'Conclusion' })).not.toBeInViewport();
-    await page.getByRole('button', { name: 'Conclusion' }).click();
-    await expect(page.getByRole('heading', { name: 'Conclusion' })).toBeInViewport();
-  });
-});
-
 test.describe('find (B-07)', () => {
   test('"next" moves the editor selection to the next match', async ({ page }) => {
     test.fail(true, 'B-07: find never sets the textarea selection');

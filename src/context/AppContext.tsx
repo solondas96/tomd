@@ -8,6 +8,8 @@ import {
   ToastNotification,
   ToastType,
   TabType,
+  HeadingItem,
+  HeadingJump,
 } from '../types';
 import {
   DEFAULT_SETTINGS,
@@ -62,6 +64,8 @@ interface AppContextValue {
   openFind: boolean;
   setOpenFind: (v: boolean) => void;
   openToc: boolean;
+  headingJump: HeadingJump | null;
+  jumpToHeading: (heading: HeadingItem) => void;
   setOpenToc: (v: boolean) => void;
   openMetadata: boolean;
   setOpenMetadata: (v: boolean) => void;
@@ -119,6 +123,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [openHistory, setOpenHistory] = useState<boolean>(false);
   const [openFind, setOpenFind] = useState<boolean>(false);
   const [openToc, setOpenToc] = useState<boolean>(false);
+  const [headingJump, setHeadingJump] = useState<HeadingJump | null>(null);
+  const jumpToHeading = useCallback((heading: HeadingItem) => {
+    setHeadingJump((previous) => ({ line: heading.line, slug: heading.slug, nonce: (previous?.nonce ?? 0) + 1 }));
+  }, []);
   const [openMetadata, setOpenMetadata] = useState<boolean>(false);
 
   // Undo/Redo Stacks
@@ -584,6 +592,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openFind,
         setOpenFind,
         openToc,
+        headingJump,
+        jumpToHeading,
         setOpenToc,
         openMetadata,
         setOpenMetadata,

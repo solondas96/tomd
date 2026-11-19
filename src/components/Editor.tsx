@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { lineRange, selectAndReveal } from '../lib/textarea';
 import { Lock } from 'lucide-react';
 
 interface EditorProps {
@@ -9,7 +10,7 @@ interface EditorProps {
 }
 
 export const Editor: React.FC<EditorProps> = ({ value, onChange, className }) => {
-  const { currentMarkdown, updateMarkdown, isEditMode, setIsEditMode } = useApp();
+  const { currentMarkdown, updateMarkdown, isEditMode, setIsEditMode, headingJump } = useApp();
   const textValue = value !== undefined ? value : currentMarkdown;
   const handleChange = onChange || updateMarkdown;
 
@@ -24,6 +25,16 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange, className }) =>
     setSyncedValue(textValue);
     setLocalVal(textValue);
   }
+
+  // Only react to jumps requested after this editor mounted, not a stale one from an earlier tab.
+  const handledJumpNonce = useRef(headingJump?.nonce ?? 0);
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!headingJump || headingJump.nonce === handledJumpNonce.current || !textarea) return;
+    handledJumpNonce.current = headingJump.nonce;
+    const range = lineRange(textarea.value, headingJump.line);
+    if (range) selectAndReveal(textarea, range[0], range[1]);
+  }, [headingJump]);
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const next = e.target.value;

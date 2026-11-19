@@ -52,11 +52,17 @@ export function parsePdfDate(s?: string): string {
   return m ? `${m[1]}-${m[2]}-${m[3]}${m[4] ? ' ' + m[4] + ':' + (m[5] || '00') : ''}` : s;
 }
 
+/**
+ * Turns text into a URL-fragment slug: lower-case letters and digits (any script) joined by hyphens.
+ *
+ * Params: s - arbitrary text.
+ * Returns: the slug, or an empty string if the text has no letters or digits.
+ */
 export function slugify(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export function friendlyError(err: unknown): string {

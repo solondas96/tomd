@@ -2,23 +2,17 @@ import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ListTree, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { TOC_MAX_LEVEL } from '../config';
+import { extractHeadings } from '../lib/headings';
 import { HeadingItem } from '../types';
 
 export const TableOfContents: React.FC = () => {
-  const { openToc, setOpenToc, currentMarkdown } = useApp();
+  const { openToc, setOpenToc, currentMarkdown, jumpToHeading } = useApp();
 
-  const headings = useMemo<HeadingItem[]>(() => {
-    if (!currentMarkdown) return [];
-    const list: HeadingItem[] = [];
-    const lines = currentMarkdown.split('\n');
-    lines.forEach((l, i) => {
-      const m = l.match(/^(#{1,4})\s+(.+)/);
-      if (m) {
-        list.push({ level: m[1].length, text: m[2].trim(), line: i });
-      }
-    });
-    return list;
-  }, [currentMarkdown]);
+  const headings = useMemo<HeadingItem[]>(
+    () => extractHeadings(currentMarkdown).filter((heading) => heading.level <= TOC_MAX_LEVEL),
+    [currentMarkdown],
+  );
 
   if (!openToc) return null;
 
@@ -48,9 +42,11 @@ export const TableOfContents: React.FC = () => {
           {headings.length === 0 ? (
             <p className="text-xs text-zinc-400 italic">No headings found in document.</p>
           ) : (
-            headings.map((h, i) => (
+            headings.map((h) => (
               <button
-                key={i}
+                key={h.slug}
+                type="button"
+                onClick={() => jumpToHeading(h)}
                 style={{ paddingLeft: `${(h.level - 1) * 14 + 8}px` }}
                 className="w-full text-left py-1.5 pr-2 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 truncate transition-colors"
                 title={h.text}
