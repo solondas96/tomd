@@ -44,7 +44,8 @@ export const Preview: React.FC<PreviewProps> = ({ content, className }) => {
           prose-h3:text-lg sm:prose-h3:text-xl
           prose-p:leading-relaxed prose-p:text-zinc-700 dark:prose-p:text-zinc-300
           prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-xl prose-pre:text-zinc-200
-          prose-code:text-indigo-600 dark:prose-code:text-indigo-400 prose-code:font-mono prose-code:text-xs prose-code:bg-indigo-50/60 dark:prose-code:bg-indigo-950/40 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+          prose-code:text-indigo-600 dark:prose-code:text-indigo-400 prose-code:font-mono prose-code:text-xs prose-code:bg-indigo-50/60 dark:prose-code:bg-indigo-950/40 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
+          [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit
           prose-table:border-collapse prose-table:w-full prose-table:my-6
           prose-th:border prose-th:border-zinc-200 dark:prose-th:border-zinc-800 prose-th:bg-zinc-100/70 dark:prose-th:bg-zinc-800/60 prose-th:p-2.5 prose-th:text-xs prose-th:font-semibold
           prose-td:border prose-td:border-zinc-200 dark:prose-td:border-zinc-800 prose-td:p-2.5 prose-td:text-xs

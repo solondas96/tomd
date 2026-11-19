@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@plugin "@tailwindcss/typography";
+
 /* Tailwind 4 defaults `dark:` to the OS setting; follow the `.dark` class so the in-app toggle works. */
 @custom-variant dark (&:where(.dark, .dark *));
 

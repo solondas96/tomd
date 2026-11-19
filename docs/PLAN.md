@@ -106,7 +106,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Add `@custom-variant dark (&:where(.dark, .dark *));` to `src/index.css`. Make the setting a three-way choice, `system | light | dark` (enum), with system as the default.
 - **Done when:** An E2E test asserts the header background changes in both directions under both OS schemes.
 
-### [ ] B-02 · Preview has no Markdown typography `S`
+### [x] B-02 · Preview has no Markdown typography `S`
 - **Cause:** `prose` classes are used but `@tailwindcss/typography` isn't installed.
 - **Change:** Install it, add `@plugin "@tailwindcss/typography";`, and check the long `prose-*` modifier list still renders correctly.
 - **Done when:** In Preview, an H1 is larger than body text and bold, and tables have borders (E2E computed-style assertion).
