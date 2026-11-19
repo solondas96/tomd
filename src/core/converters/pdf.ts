@@ -5,6 +5,7 @@ import type { TextContent, TextItem } from 'pdfjs-dist/types/src/display/api';
 import { require2dContext } from '../../lib/utils';
 import { createOcrSession, type OcrSession } from '../../lib/vendor/ocr-session';
 import { loadPdfJs } from '../../lib/vendor/pdfjs';
+import { isListItemText } from '../listItem';
 import type { ConversionContext, ConverterInput } from '../types';
 
 interface LineGroup {
@@ -305,9 +306,7 @@ function normaliseLine(text: string): string {
 
 function formatParagraph(lines: { text: string; bold: boolean }[]): string {
   const normalized = lines.map(({ text }) => normaliseLine(text));
-  return normalized.every((t) => /^[-\d]/.test(t))
-    ? normalized.join('\n')
-    : normalized.join(' ').replace(/\s+/g, ' ').trim();
+  return normalized.every(isListItemText) ? normalized.join('\n') : normalized.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 function clusterPositions(values: number[], tol: number): number[] {

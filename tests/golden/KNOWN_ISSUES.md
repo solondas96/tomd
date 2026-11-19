@@ -19,7 +19,7 @@ IDs marked **(proposed)** are not in `docs/PLAN.md` yet.
 | `pdf/header-footer.pdf` | The running title and `Page N` are kept on every page. | Q-03 |
 | `pdf/hyphenation-ligatures.pdf` | `re-` / `flow` and `hyphen-` / `ation` stay split across lines (`re- flow`). Ligatures are already normalised by PDF.js. | Q-06 |
 | `pdf/unicode.pdf` | The first CJK character comes out as the Kangxi radical `⽇` (U+2F47) instead of `日`. | Q-06 (NFKC normalisation) |
-| `pdf/numbered-lines.pdf` | A wrapped paragraph whose every line starts with a digit keeps its line breaks (`/^[-\d]/` rule); the ordered list becomes a **false table**. | B-10, Q-02, Q-08 |
+| `pdf/numbered-lines.pdf` | The ordered list becomes a **false 2-column table**. | Q-02, Q-08 |
 | `pdf/two-column.pdf` | Columns are interleaved line by line, so the left and right columns are mixed together. | Q-14 (proposed: column detection and reading order) |
 | `pdf/scanned.pdf` | Image-only page: the output is the "no extractable text" notice. OCR cannot run in the Node test environment, so this fixture only pins the OCR-off behaviour. | Not a defect; OCR is covered by E2E (F-06) |
 

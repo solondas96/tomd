@@ -144,7 +144,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Fix the `sticky top-16` / `h-[calc(100vh-4rem)]` stacking in `App.tsx` and `ActionBar.tsx`.
 - **Done when:** The action bar sits directly under the header at 390 px, 1024 px and 1440 px widths (screenshot test).
 
-### [ ] B-10 · Lines starting with digits treated as lists `S`
+### [x] B-10 · Lines starting with digits treated as lists `S`
 - **Cause:** `/^[-\d]/` in `formatParagraph`.
 - **Change:** Only treat a line as a list item when it matches `^\d{1,3}[.)]\s` or a bullet pattern.
 - **Done when:** The "2024 was a record year…" fixture stays a paragraph.
