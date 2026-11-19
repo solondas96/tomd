@@ -10,7 +10,10 @@ declare global {
       convertToHtml: (options: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string; messages: string[] }>;
     };
     XLSX?: {
-      read: (data: ArrayBuffer, opts: { type: string }) => {
+      read: (
+        data: ArrayBuffer,
+        opts: { type: string },
+      ) => {
         SheetNames: string[];
         Sheets: Record<string, unknown>;
       };
@@ -67,7 +70,10 @@ export function createTurndown(): TurndownService {
 
 // ── DOCX ──────────────────────────────────────────────────────
 
-export async function convertDocx(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertDocx(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js', 'mammoth');
   onProgress(0.3, 'Parsing DOCX structure...');
   const buf = await file.arrayBuffer();
@@ -80,7 +86,10 @@ export async function convertDocx(file: File, onProgress: (pct: number, msg: str
 
 // ── PPTX ──────────────────────────────────────────────────────
 
-export async function convertPptx(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertPptx(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.2, 'Extracting presentation slides...');
   const buf = await file.arrayBuffer();
   const zip = await JSZip.loadAsync(buf);
@@ -104,7 +113,10 @@ export async function convertPptx(file: File, onProgress: (pct: number, msg: str
 
 // ── XLSX / XLS ────────────────────────────────────────────────
 
-export async function convertXlsx(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertXlsx(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   await loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js', 'XLSX');
   onProgress(0.3, 'Parsing spreadsheet...');
   const buf = await file.arrayBuffer();
@@ -129,7 +141,10 @@ export async function convertXlsx(file: File, onProgress: (pct: number, msg: str
 
 // ── CSV / TSV ─────────────────────────────────────────────────
 
-export async function convertCsv(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertCsv(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.3, 'Parsing CSV/TSV...');
   const text = await file.text();
   const sep = file.name.endsWith('.tsv') ? '\t' : ',';
@@ -140,7 +155,10 @@ export async function convertCsv(file: File, onProgress: (pct: number, msg: stri
 
 // ── HTML ──────────────────────────────────────────────────────
 
-export async function convertHtml(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertHtml(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.3, 'Converting HTML document...');
   const html = await file.text();
   const md = createTurndown().turndown(html);
@@ -149,11 +167,16 @@ export async function convertHtml(file: File, onProgress: (pct: number, msg: str
 
 // ── EPUB ──────────────────────────────────────────────────────
 
-export async function convertEpub(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertEpub(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.2, 'Extracting EPUB package...');
   const buf = await file.arrayBuffer();
   const zip = await JSZip.loadAsync(buf);
-  const htmlFiles = Object.keys(zip.files).filter((f) => /\.(x?html?)$/i.test(f)).sort();
+  const htmlFiles = Object.keys(zip.files)
+    .filter((f) => /\.(x?html?)$/i.test(f))
+    .sort();
   const td = createTurndown();
   const chapters: string[] = [];
 
@@ -177,7 +200,10 @@ export async function convertEpub(file: File, onProgress: (pct: number, msg: str
 
 // ── RTF ───────────────────────────────────────────────────────
 
-export async function convertRtf(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertRtf(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.3, 'Processing RTF text...');
   const text = await file.text();
   const result = text
@@ -198,7 +224,7 @@ export async function convertRtf(file: File, onProgress: (pct: number, msg: stri
 export async function convertImage(
   file: File,
   onProgress: (pct: number, msg: string) => void,
-  settings: AppSettings
+  settings: AppSettings,
 ): Promise<ConversionResult> {
   const lang = settings.ocrLanguage || 'eng';
   let worker: Awaited<ReturnType<NonNullable<typeof window.Tesseract>['createWorker']>> | null = null;
@@ -209,7 +235,9 @@ export async function convertImage(
     onProgress(0.2, 'Initializing OCR engine...');
     worker = await window.Tesseract.createWorker(lang);
     onProgress(0.4, 'Recognizing image text...');
-    const { data: { text } } = await worker.recognize(file);
+    const {
+      data: { text },
+    } = await worker.recognize(file);
     await worker.terminate();
 
     const md = text.trim();
@@ -229,7 +257,11 @@ export async function convertImage(
     };
   } catch (err) {
     if (worker) {
-      try { await worker.terminate(); } catch { /* ignore */ }
+      try {
+        await worker.terminate();
+      } catch {
+        /* ignore */
+      }
     }
     throw new Error('OCR recognition failed: ' + (err instanceof Error ? err.message : String(err)));
   }
@@ -237,14 +269,20 @@ export async function convertImage(
 
 // ── Plain Text / Markdown ─────────────────────────────────────
 
-export async function convertText(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertText(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.5, 'Reading file...');
   return { markdown: await file.text(), pageCount: 1, metadata: null };
 }
 
 // ── LaTeX ─────────────────────────────────────────────────────
 
-export async function convertLatex(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertLatex(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.3, 'Parsing LaTeX document...');
   let tex = await file.text();
   tex = tex.replace(/^[\s\S]*?\\begin\{document\}/, '').replace(/\\end\{document\}[\s\S]*$/, '');
@@ -262,7 +300,13 @@ export async function convertLatex(file: File, onProgress: (pct: number, msg: st
     .replace(/\\end\{itemize\}|\\end\{enumerate\}/g, '')
     .replace(/\\item\s*/g, '- ')
     .replace(/\\begin\{verbatim\}([\s\S]*?)\\end\{verbatim\}/g, '```\n$1\n```')
-    .replace(/\\begin\{quote\}([\s\S]*?)\\end\{quote\}/g, (_, c) => c.trim().split('\n').map((l: string) => '> ' + l).join('\n'))
+    .replace(/\\begin\{quote\}([\s\S]*?)\\end\{quote\}/g, (_, c) =>
+      c
+        .trim()
+        .split('\n')
+        .map((l: string) => '> ' + l)
+        .join('\n'),
+    )
     .replace(/\\\\/g, '\n')
     .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
     .replace(/\\[a-zA-Z]+/g, '')
@@ -274,16 +318,26 @@ export async function convertLatex(file: File, onProgress: (pct: number, msg: st
 
 // ── XML & JSON ────────────────────────────────────────────────
 
-export async function convertXml(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertXml(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.5, 'Formatting XML...');
   return { markdown: '```xml\n' + (await file.text()) + '\n```', pageCount: 1, metadata: null };
 }
 
-export async function convertJson(file: File, onProgress: (pct: number, msg: string) => void): Promise<ConversionResult> {
+export async function convertJson(
+  file: File,
+  onProgress: (pct: number, msg: string) => void,
+): Promise<ConversionResult> {
   onProgress(0.5, 'Formatting JSON...');
   const text = await file.text();
   try {
-    return { markdown: '```json\n' + JSON.stringify(JSON.parse(text), null, 2) + '\n```', pageCount: 1, metadata: null };
+    return {
+      markdown: '```json\n' + JSON.stringify(JSON.parse(text), null, 2) + '\n```',
+      pageCount: 1,
+      metadata: null,
+    };
   } catch {
     return { markdown: '```json\n' + text + '\n```', pageCount: 1, metadata: null };
   }
@@ -370,13 +424,13 @@ export async function createDocxBlob(html: string): Promise<Blob> {
         const level = parseInt(tag[1], 10);
         const sz = [52, 40, 32, 28, 26, 24][level - 1];
         paragraphs.push(
-          `<w:p><w:pPr><w:pStyle w:val="Heading${level}"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="${sz}"/></w:rPr><w:t xml:space="preserve">${escXml(text)}</w:t></w:r></w:p>`
+          `<w:p><w:pPr><w:pStyle w:val="Heading${level}"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="${sz}"/></w:rPr><w:t xml:space="preserve">${escXml(text)}</w:t></w:r></w:p>`,
         );
       } else if (tag === 'li' || tag === 'ul' || tag === 'ol') {
         const items = tag === 'li' ? [el] : Array.from(el.querySelectorAll('li'));
         for (const li of items) {
           paragraphs.push(
-            `<w:p><w:r><w:t xml:space="preserve">\u2022 ${escXml(li.textContent?.trim() || '')}</w:t></w:r></w:p>`
+            `<w:p><w:r><w:t xml:space="preserve">\u2022 ${escXml(li.textContent?.trim() || '')}</w:t></w:r></w:p>`,
           );
         }
       } else {

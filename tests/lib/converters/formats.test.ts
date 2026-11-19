@@ -41,7 +41,12 @@ describe('parseCsv', () => {
 
 describe('arrayToMdTable', () => {
   it('renders a header, separator and body rows', () => {
-    expect(arrayToMdTable([['a', 'b'], ['1', '2']])).toBe('| a | b |\n| --- | --- |\n| 1 | 2 |');
+    expect(
+      arrayToMdTable([
+        ['a', 'b'],
+        ['1', '2'],
+      ]),
+    ).toBe('| a | b |\n| --- | --- |\n| 1 | 2 |');
   });
 
   it('pads short rows to the widest row', () => {

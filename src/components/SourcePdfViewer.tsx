@@ -41,7 +41,8 @@ export const SourcePdfViewer: React.FC = () => {
           canvas.className = 'max-w-full h-auto';
 
           const pageNum = document.createElement('div');
-          pageNum.className = 'w-full py-1 text-center text-[10px] text-zinc-400 font-semibold bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800';
+          pageNum.className =
+            'w-full py-1 text-center text-[10px] text-zinc-400 font-semibold bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800';
           pageNum.textContent = `Page ${p} of ${pdf.numPages}`;
 
           wrapper.appendChild(canvas);
@@ -82,9 +83,7 @@ export const SourcePdfViewer: React.FC = () => {
           >
             <ZoomOut className="w-4 h-4" />
           </button>
-          <span className="text-xs font-mono text-zinc-500 w-12 text-center">
-            {Math.round(scale * 100)}%
-          </span>
+          <span className="text-xs font-mono text-zinc-500 w-12 text-center">{Math.round(scale * 100)}%</span>
           <button
             onClick={() => setScale((s) => Math.min(2.5, s + 0.2))}
             className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"

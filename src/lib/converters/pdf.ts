@@ -43,7 +43,7 @@ declare global {
 export async function convertPdf(
   file: File,
   onProgress: (pct: number, msg: string) => void,
-  opts: ConversionOptions
+  opts: ConversionOptions,
 ): Promise<ConversionResult> {
   let buffer: ArrayBuffer;
   try {
@@ -61,8 +61,7 @@ export async function convertPdf(
     throw new Error('PDF.js library failed to load');
   }
 
-  pdfjs.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
   const pdf = await pdfjs.getDocument({ data: buffer }).promise;
   const total = pdf.numPages;
@@ -125,7 +124,7 @@ export async function convertPdf(
 function pageToMarkdown(
   textContent: { items: TextItem[]; styles: Record<string, { fontFamily?: string }> },
   pageHeight: number,
-  opts: ConversionOptions
+  opts: ConversionOptions,
 ): string {
   const { items, styles } = textContent;
   if (!items?.length) return '';
@@ -146,7 +145,7 @@ function processTextItems(
   items: TextItem[],
   pageHeight: number,
   styles: Record<string, { fontFamily?: string }>,
-  opts: ConversionOptions
+  opts: ConversionOptions,
 ): string {
   if (!items.length) return '';
   const bodySize = modeSize(items.map(getFontSize));
@@ -187,7 +186,7 @@ function assembleMarkdown(
   lines: LineGroup[],
   bodySize: number,
   styles: Record<string, { fontFamily?: string }>,
-  opts: ConversionOptions
+  opts: ConversionOptions,
 ): string {
   const thr = HEADING_THRESHOLDS[opts.headingSensitivity || 'medium'] || 1.1;
   const blocks: string[] = [];
@@ -356,15 +355,13 @@ function tryExtractTable(lines: LineGroup[], start: number): { rows: string[][];
   const candidates = lines.slice(start, end);
   const cols = clusterPositions(
     candidates.flatMap((l) => l.items.map((it) => it.transform[4])),
-    10
+    10,
   );
   if (cols.length < 2) return null;
 
   const valid = candidates.every((line) => {
     const matched = new Set(
-      line.items
-        .map((it) => cols.findIndex((c) => Math.abs(c - it.transform[4]) <= 12))
-        .filter((i) => i >= 0)
+      line.items.map((it) => cols.findIndex((c) => Math.abs(c - it.transform[4]) <= 12)).filter((i) => i >= 0),
     );
     return matched.size >= 2;
   });
@@ -377,8 +374,8 @@ function tryExtractTable(lines: LineGroup[], start: number): { rows: string[][];
           .filter((it) => Math.abs(it.transform[4] - col) <= 12)
           .map((it) => it.str)
           .join(' ')
-          .trim()
-      )
+          .trim(),
+      ),
     ),
     length: end - start,
   };
@@ -421,7 +418,7 @@ async function ocrPage(
       promise: Promise<void>;
     };
   },
-  lang: string
+  lang: string,
 ): Promise<string> {
   try {
     await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js', 'Tesseract');
@@ -432,7 +429,9 @@ async function ocrPage(
     canvas.height = vp.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
     const worker = await window.Tesseract.createWorker(lang || 'eng');
-    const { data: { text } } = await worker.recognize(canvas);
+    const {
+      data: { text },
+    } = await worker.recognize(canvas);
     await worker.terminate();
     return text.trim();
   } catch (err) {

@@ -1,14 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
-import {
-  UploadCloud,
-  FileText,
-  FolderUp,
-  Globe,
-  Clipboard,
-  ArrowRight,
-  Sparkles,
-} from 'lucide-react';
+import { UploadCloud, FileText, FolderUp, Globe, Clipboard, ArrowRight, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { isSupported } from '../lib/converters';
 
@@ -51,9 +43,7 @@ export const DropZone: React.FC = () => {
         const reader = entry.createReader();
         let batch: FileSystemEntry[];
         do {
-          batch = await new Promise<FileSystemEntry[]>((resolve, reject) =>
-            reader.readEntries(resolve, reject)
-          );
+          batch = await new Promise<FileSystemEntry[]>((resolve, reject) => reader.readEntries(resolve, reject));
           for (const child of batch) await readEntry(child);
         } while (batch.length > 0);
       }
@@ -89,7 +79,7 @@ export const DropZone: React.FC = () => {
         await processFiles(files);
       }
     },
-    [processFiles]
+    [processFiles],
   );
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,11 +122,14 @@ export const DropZone: React.FC = () => {
           <span>Local WebAssembly &amp; AI-Ready Markdown Engine</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 mb-4">
-          Any Document <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600">→ Clean Markdown</span>
+          Any Document{' '}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600">
+            → Clean Markdown
+          </span>
         </h1>
         <p className="max-w-2xl text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed">
-          Convert PDF, Word, PowerPoint, Excel, EPUB, and images to LLM-ready markdown.
-          Zero server uploads. 100% private in your browser.
+          Convert PDF, Word, PowerPoint, Excel, EPUB, and images to LLM-ready markdown. Zero server uploads. 100%
+          private in your browser.
         </p>
       </motion.div>
 
@@ -205,7 +198,13 @@ export const DropZone: React.FC = () => {
             </div>
             <div className="flex items-center gap-1.5">
               <Clipboard className="w-4 h-4 text-zinc-400" />
-              <span>Paste Image or HTML (<kbd className="font-sans px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">Ctrl+V</kbd>)</span>
+              <span>
+                Paste Image or HTML (
+                <kbd className="font-sans px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                  Ctrl+V
+                </kbd>
+                )
+              </span>
             </div>
           </div>
         </div>

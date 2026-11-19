@@ -34,9 +34,7 @@ export const TableOfContents: React.FC = () => {
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ListTree className="w-4 h-4 text-indigo-500" />
-            <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-              Table of Contents
-            </h3>
+            <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Table of Contents</h3>
           </div>
           <button
             onClick={() => setOpenToc(false)}

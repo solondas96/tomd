@@ -42,7 +42,10 @@ export const DocumentMetadata: React.FC = () => {
 
           <div className="space-y-2.5">
             {items.map((it) => (
-              <div key={it.label} className="flex justify-between py-1.5 border-b border-zinc-50 dark:border-zinc-800/40 text-xs">
+              <div
+                key={it.label}
+                className="flex justify-between py-1.5 border-b border-zinc-50 dark:border-zinc-800/40 text-xs"
+              >
                 <span className="font-semibold text-zinc-500 dark:text-zinc-400">{it.label}</span>
                 <span className="font-medium text-zinc-900 dark:text-zinc-100 text-right truncate max-w-[220px]">
                   {it.value}

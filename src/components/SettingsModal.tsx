@@ -26,9 +26,7 @@ export const SettingsModal: React.FC = () => {
                 <Settings className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-                  Conversion Settings
-                </h3>
+                <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">Conversion Settings</h3>
                 <p className="text-xs text-zinc-500">Fine-tune extraction heuristics and formatting.</p>
               </div>
             </div>
@@ -44,13 +42,17 @@ export const SettingsModal: React.FC = () => {
           <div className="space-y-5 text-sm">
             {/* Heading sensitivity */}
             <div>
-              <label htmlFor="setting-heading-sensitivity" className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 block mb-1">
+              <label
+                htmlFor="setting-heading-sensitivity"
+                className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 block mb-1"
+              >
                 Heading Sensitivity (PDF)
               </label>
               <p className="text-[11px] text-zinc-500 mb-2">
                 Controls the font-size ratio threshold required to classify a line as a header.
               </p>
-              <select id="setting-heading-sensitivity"
+              <select
+                id="setting-heading-sensitivity"
                 value={settings.headingSensitivity}
                 onChange={(e) => updateSettings({ headingSensitivity: e.target.value as HeadingSensitivity })}
                 className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -63,10 +65,14 @@ export const SettingsModal: React.FC = () => {
 
             {/* Page separator */}
             <div>
-              <label htmlFor="setting-page-separator" className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 block mb-1">
+              <label
+                htmlFor="setting-page-separator"
+                className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 block mb-1"
+              >
                 Page Separator
               </label>
-              <select id="setting-page-separator"
+              <select
+                id="setting-page-separator"
                 value={settings.pageSeparator}
                 onChange={(e) => updateSettings({ pageSeparator: e.target.value as PageSeparator })}
                 className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -169,10 +175,14 @@ export const SettingsModal: React.FC = () => {
 
               {settings.ocr && (
                 <div className="pl-2 pt-1">
-                  <label htmlFor="setting-ocr-language" className="font-semibold text-[11px] text-zinc-700 dark:text-zinc-300 block mb-1">
+                  <label
+                    htmlFor="setting-ocr-language"
+                    className="font-semibold text-[11px] text-zinc-700 dark:text-zinc-300 block mb-1"
+                  >
                     OCR Language:
                   </label>
-                  <select id="setting-ocr-language"
+                  <select
+                    id="setting-ocr-language"
                     value={settings.ocrLanguage}
                     onChange={(e) => updateSettings({ ocrLanguage: e.target.value })}
                     className="w-full px-3 py-1.5 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"

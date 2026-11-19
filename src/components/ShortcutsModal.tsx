@@ -31,9 +31,7 @@ export const ShortcutsModal: React.FC = () => {
           <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-5">
             <div className="flex items-center gap-2">
               <Command className="w-4 h-4 text-indigo-500" />
-              <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-                Keyboard Shortcuts
-              </h3>
+              <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">Keyboard Shortcuts</h3>
             </div>
             <button
               onClick={() => setOpenShortcuts(false)}

@@ -34,9 +34,7 @@ export const HistoryDrawer: React.FC = () => {
                   <History className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                    Recent Conversions
-                  </h3>
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Recent Conversions</h3>
                   <p className="text-[11px] text-zinc-400">Stored safely in local browser memory.</p>
                 </div>
               </div>

@@ -20,14 +20,7 @@ import {
   FORMAT_MAP,
   FETCH_TIMEOUT_MS,
 } from '../config';
-import {
-  wordCount,
-  charCount,
-  friendlyError,
-  generateFrontmatter,
-  triggerDownload,
-  slugify,
-} from '../lib/utils';
+import { wordCount, charCount, friendlyError, generateFrontmatter, triggerDownload, slugify } from '../lib/utils';
 import { convertFile, getFileExt, isSupported } from '../lib/converters';
 import { createTurndown } from '../lib/converters/formats';
 
@@ -195,14 +188,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setHistory((prev) => [newEntry, ...prev.filter((x) => x.filename !== entry.filename)].slice(0, MAX_HISTORY));
   }, []);
 
-  const updateMarkdown = useCallback((md: string) => {
-    undoStackRef.current.push(currentMarkdown);
-    if (undoStackRef.current.length > MAX_UNDO) undoStackRef.current.shift();
-    redoStackRef.current = [];
-    setCanUndo(true);
-    setCanRedo(false);
-    setCurrentMarkdown(md);
-  }, [currentMarkdown]);
+  const updateMarkdown = useCallback(
+    (md: string) => {
+      undoStackRef.current.push(currentMarkdown);
+      if (undoStackRef.current.length > MAX_UNDO) undoStackRef.current.shift();
+      redoStackRef.current = [];
+      setCanUndo(true);
+      setCanRedo(false);
+      setCurrentMarkdown(md);
+    },
+    [currentMarkdown],
+  );
 
   const undo = useCallback(() => {
     if (!undoStackRef.current.length) return;
@@ -277,7 +273,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setProgressPct(10 + Math.round(pct * 85));
             setProgressMsg(msg);
           },
-          settings
+          settings,
         );
 
         let finalMd = result.markdown;
@@ -316,7 +312,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         abortControllerRef.current = null;
       }
     },
-    [isProcessing, settings, saveToHistory, addToast]
+    [isProcessing, settings, saveToHistory, addToast],
   );
 
   const processBatchFiles = useCallback(
@@ -337,9 +333,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        setBatchItems((prev) =>
-          prev.map((it, idx) => (idx === i ? { ...it, status: 'processing' } : it))
-        );
+        setBatchItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, status: 'processing' } : it)));
 
         try {
           const ext = getFileExt(item.file);
@@ -353,10 +347,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           setBatchItems((prev) =>
             prev.map((it, idx) =>
-              idx === i
-                ? { ...it, markdown: md, pageCount: result.pageCount, status: 'done' }
-                : it
-            )
+              idx === i ? { ...it, markdown: md, pageCount: result.pageCount, status: 'done' } : it,
+            ),
           );
 
           saveToHistory({
@@ -366,11 +358,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
         } catch (err) {
           setBatchItems((prev) =>
-            prev.map((it, idx) =>
-              idx === i
-                ? { ...it, status: 'error', error: friendlyError(err) }
-                : it
-            )
+            prev.map((it, idx) => (idx === i ? { ...it, status: 'error', error: friendlyError(err) } : it)),
           );
         }
       }
@@ -378,7 +366,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsProcessing(false);
       addToast(`Batch conversion finished (${items.length} files)`, 'success');
     },
-    [isProcessing, settings, saveToHistory, addToast]
+    [isProcessing, settings, saveToHistory, addToast],
   );
 
   const processFiles = useCallback(
@@ -393,7 +381,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addToast(
           `File too large: ${oversized.name} (${(oversized.size / 1048576).toFixed(0)} MB). Max 100 MB.`,
           'error',
-          4000
+          4000,
         );
         return;
       }
@@ -404,7 +392,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await processBatchFiles(valid);
       }
     },
-    [processSingleFile, processBatchFiles, addToast]
+    [processSingleFile, processBatchFiles, addToast],
   );
 
   // ── URL Scraping & Import ─────────────────────────────────────
@@ -479,14 +467,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsProcessing(false);
       }
     },
-    [isProcessing, settings, saveToHistory, addToast]
+    [isProcessing, settings, saveToHistory, addToast],
   );
 
   const processPastedContent = useCallback(
     async (file: File) => {
       await processSingleFile(file);
     },
-    [processSingleFile]
+    [processSingleFile],
   );
 
   // ── History Handlers ──────────────────────────────────────────
@@ -502,7 +490,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setOpenHistory(false);
       addToast(`Restored: ${item.filename}`, 'success');
     },
-    [addToast]
+    [addToast],
   );
 
   const deleteHistoryItem = useCallback((id: string) => {
@@ -533,9 +521,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!done.length) return;
 
     const toc = done.map((it, i) => `${i + 1}. [${it.filename}](#${slugify(it.filename)})`).join('\n');
-    const body = done
-      .map((it) => `## ${it.filename} {#${slugify(it.filename)}}\n\n${it.markdown}`)
-      .join('\n\n---\n\n');
+    const body = done.map((it) => `## ${it.filename} {#${slugify(it.filename)}}\n\n${it.markdown}`).join('\n\n---\n\n');
     const merged = `# Merged Documents\n\n${toc}\n\n---\n\n${body}`;
 
     setCurrentMarkdown(merged);
@@ -546,16 +532,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast(`Merged ${done.length} documents`, 'success');
   }, [batchItems, addToast]);
 
-  const selectBatchItem = useCallback((index: number) => {
-    const item = batchItems[index];
-    if (item && item.status === 'done') {
-      setCurrentMarkdown(item.markdown);
-      setCurrentFilename(item.filename);
-      setPageCount(item.pageCount || 1);
-      setIsBatchMode(false);
-      setActiveTab('raw');
-    }
-  }, [batchItems]);
+  const selectBatchItem = useCallback(
+    (index: number) => {
+      const item = batchItems[index];
+      if (item && item.status === 'done') {
+        setCurrentMarkdown(item.markdown);
+        setCurrentFilename(item.filename);
+        setPageCount(item.pageCount || 1);
+        setIsBatchMode(false);
+        setActiveTab('raw');
+      }
+    },
+    [batchItems],
+  );
 
   return (
     <AppContext.Provider

@@ -1,28 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import {
-  FileText,
-  Archive,
-  Layers,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Clock,
-  ArrowRight,
-  Plus,
-} from 'lucide-react';
+import { FileText, Archive, Layers, CheckCircle2, AlertCircle, Loader2, Clock, ArrowRight, Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatBytes, wordCount } from '../lib/utils';
 
 export const BatchProcessor: React.FC = () => {
-  const {
-    batchItems,
-    isProcessing,
-    downloadZipBatch,
-    mergeBatchItems,
-    selectBatchItem,
-    resetAll,
-  } = useApp();
+  const { batchItems, isProcessing, downloadZipBatch, mergeBatchItems, selectBatchItem, resetAll } = useApp();
 
   const doneCount = batchItems.filter((i) => i.status === 'done').length;
   const isAllFinished = !isProcessing && batchItems.every((i) => i.status === 'done' || i.status === 'error');
@@ -39,9 +22,7 @@ export const BatchProcessor: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                Batch Processing Queue
-              </h2>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Batch Processing Queue</h2>
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               {doneCount} of {batchItems.length} documents successfully converted.
@@ -92,9 +73,7 @@ export const BatchProcessor: React.FC = () => {
                   <FileText className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                    {item.filename}
-                  </h4>
+                  <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{item.filename}</h4>
                   <div className="flex items-center gap-2 text-xs text-zinc-400 mt-0.5">
                     <span>{formatBytes(item.size)}</span>
                     {item.status === 'done' && (

@@ -21,9 +21,7 @@ export const ProgressModal: React.FC = () => {
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
 
-          <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-            Converting Document
-          </h3>
+          <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-1">Converting Document</h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 truncate max-w-xs">
             {progressMsg || 'Processing content in-memory...'}
           </p>

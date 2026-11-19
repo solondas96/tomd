@@ -199,7 +199,9 @@ export const ActionBar: React.FC = () => {
             {pageCount > 0 && (
               <>
                 <span>•</span>
-                <span>{pageCount} {pageCount === 1 ? 'page' : 'pages'}</span>
+                <span>
+                  {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+                </span>
               </>
             )}
           </div>

@@ -46,7 +46,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Add Vitest and jsdom. Add `npm test` and `npm run test:watch`. Put tests in `tests/` (mirroring `src/`).
 - **Done when:** `npm test` runs locally and in CI, with at least one passing test (`parseCsv`, `arrayToMdTable`).
 
-### [ ] F-02 · Lint & format `S` · deps: —
+### [x] F-02 · Lint & format `S` · deps: —
 - **Change:** ESLint flat config (typescript-eslint, react-hooks, jsx-a11y) and Prettier. Add `npm run lint` and `npm run typecheck`.
 - **Done when:** The repo lints clean. The rule set is committed and any suppressions are justified inline.
 

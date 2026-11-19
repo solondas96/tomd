@@ -28,7 +28,7 @@ export async function convertFile(
   file: File,
   format: string,
   onProgress: (pct: number, msg: string) => void,
-  options: ConversionOptions
+  options: ConversionOptions,
 ): Promise<ConversionResult> {
   switch (format) {
     case 'pdf':

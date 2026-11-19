@@ -1,15 +1,5 @@
 import React from 'react';
-import {
-  FileText,
-  History,
-  Moon,
-  Sun,
-  Settings,
-  HelpCircle,
-  Plus,
-  Github,
-  ShieldCheck,
-} from 'lucide-react';
+import { FileText, History, Moon, Sun, Settings, HelpCircle, Plus, Github, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Header: React.FC = () => {
@@ -38,9 +28,7 @@ export const Header: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-lg tracking-tight text-zinc-900 dark:text-zinc-100">
-                  toMD
-                </span>
+                <span className="font-bold text-lg tracking-tight text-zinc-900 dark:text-zinc-100">toMD</span>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                   v2.0
                 </span>

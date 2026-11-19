@@ -12,5 +12,5 @@ createRoot(rootElement).render(
     <AppProvider>
       <AppContent />
     </AppProvider>
-  </StrictMode>
+  </StrictMode>,
 );
