@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { OCR_LANGUAGES } from '../config';
+import { OCR_LANGUAGE_DATA_HOST, OCR_LANGUAGES } from '../config';
 import { HeadingSensitivity, PageSeparator, ThemePreference } from '../types';
 
 export const SettingsModal: React.FC = () => {
@@ -195,6 +195,14 @@ export const SettingsModal: React.FC = () => {
 
               {settings.ocr && (
                 <div className="pl-2 pt-1">
+                  <p
+                    id="ocr-disclosure"
+                    className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg px-2.5 py-2 mb-2"
+                  >
+                    The first time you use a language, its recognition model (a few MB) is downloaded from{' '}
+                    <span className="font-mono">{OCR_LANGUAGE_DATA_HOST}</span>. Only that request is made; your
+                    documents and images are never uploaded.
+                  </p>
                   <label
                     htmlFor="setting-ocr-language"
                     className="font-semibold text-[11px] text-zinc-700 dark:text-zinc-300 block mb-1"

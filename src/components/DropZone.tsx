@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { UploadCloud, FileText, FolderUp, Globe, Clipboard, ArrowRight, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { URL_IMPORT_PROXIES } from '../config';
 import { isSupported, supportedExtensions } from '../core';
 
 interface FileSystemEntry {
@@ -18,6 +19,7 @@ export const DropZone: React.FC = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragCount, setDragCount] = useState(0);
   const [urlInput, setUrlInput] = useState('');
+  const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -89,12 +91,18 @@ export const DropZone: React.FC = () => {
     }
   };
 
+  // Step 1: ask. The page URL leaves the device (third-party proxies), so it needs explicit consent each time.
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (urlInput.trim()) {
-      processUrl(urlInput.trim());
-      setUrlInput('');
-    }
+    if (urlInput.trim()) setPendingUrl(urlInput.trim());
+  };
+
+  // Step 2: the user confirmed.
+  const confirmUrlFetch = () => {
+    if (!pendingUrl) return;
+    processUrl(pendingUrl);
+    setPendingUrl(null);
+    setUrlInput('');
   };
 
   const supportedFormats = [
@@ -239,6 +247,41 @@ export const DropZone: React.FC = () => {
             </button>
           </form>
         </div>
+
+        {pendingUrl && (
+          <div
+            role="alertdialog"
+            aria-labelledby="url-consent-title"
+            aria-describedby="url-consent-body"
+            className="md:col-span-3 p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 text-sm text-amber-950 dark:text-amber-100"
+          >
+            <p id="url-consent-title" className="font-semibold mb-1">
+              This sends the page address to a third party
+            </p>
+            <p id="url-consent-body" className="text-xs leading-relaxed mb-3">
+              Browsers cannot fetch most web pages directly, so{' '}
+              <span className="font-mono break-all">{pendingUrl}</span> will be requested through a public proxy service
+              ({URL_IMPORT_PROXIES.map((proxy) => proxy.host).join(', ')}), trying each in turn until one works. They
+              can see the address and the page they return. Files you drop or pick are never sent anywhere.
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={confirmUrlFetch}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white"
+              >
+                Fetch via proxy
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingUrl(null)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-900 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Format Badges Grid */}
         <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 pt-2">

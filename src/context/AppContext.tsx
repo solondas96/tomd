@@ -21,6 +21,7 @@ import {
   MAX_UNDO,
   MAX_FILE_SIZE,
   FETCH_TIMEOUT_MS,
+  URL_IMPORT_PROXIES,
 } from '../config';
 import { wordCount, charCount, friendlyError, generateFrontmatter, triggerDownload } from '../lib/utils';
 import { useThemeClass } from '../hooks/useThemeClass';
@@ -432,17 +433,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setProgressPct(20);
       setProgressMsg('Fetching remote webpage...');
 
-      const proxyUrls = [
-        (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-        (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-        (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-      ];
-
       try {
         let html: string | null = null;
-        for (const buildUrl of proxyUrls) {
+        for (const proxy of URL_IMPORT_PROXIES) {
           try {
-            const resp = await fetch(buildUrl(url), {
+            const resp = await fetch(proxy.buildUrl(url), {
               signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
             });
             if (resp.ok) {

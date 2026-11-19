@@ -149,7 +149,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** Only treat a line as a list item when it matches `^\d{1,3}[.)]\s` or a bullet pattern.
 - **Done when:** The "2024 was a record year…" fixture stays a paragraph.
 
-### [ ] B-11 · README truthfulness pass `S` · deps: B-01…B-10, F-03
+### [x] B-11 · README truthfulness pass `S` · deps: B-01…B-10, F-03
 - **Change:** Remove or qualify any claim that isn't true:
   - "concurrent" batch (until A-01)
   - "syntax overlay"

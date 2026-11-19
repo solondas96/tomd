@@ -6,7 +6,9 @@
 
 Convert PDF, DOCX, PPTX, XLSX, HTML, EPUB, images, and 10+ other formats to structured, LLM-ready Markdown — entirely in your browser.
 
-**No server. No uploads. No sign-up. Zero data leaves your device.**
+**No server. No uploads. No sign-up. Your files never leave your device.**
+
+Two optional features contact third parties, and the app tells you before each one: [URL import](#privacy-what-does-and-does-not-leave-your-device) and the first use of an [OCR](#privacy-what-does-and-does-not-leave-your-device) language.
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-solondas96.github.io/tomd-22c55e?style=for-the-badge&logo=github)](https://solondas96.github.io/tomd/)
 [![Deploy](https://github.com/solondas96/tomd/actions/workflows/deploy.yml/badge.svg)](https://github.com/solondas96/tomd/actions/workflows/deploy.yml)
@@ -25,7 +27,7 @@ Most document-to-markdown tools require uploading files to a remote server, inst
 
 > Drop a file in the browser. Get clean Markdown out. Nothing else happens.
 
-Every conversion executes locally using JavaScript, WebAssembly, and standard Web APIs — your documents never leave your machine. This makes it safe for confidential documents, air-gapped environments, and security-conscious workflows.
+Every conversion executes locally using JavaScript, WebAssembly, and standard Web APIs — your documents never leave your machine. All libraries and fonts are bundled with the app (nothing is loaded from a CDN apart from the optional OCR language model), and once the app has loaded once it works offline. The two exceptions are listed under [Privacy](#privacy-what-does-and-does-not-leave-your-device).
 
 ---
 
@@ -52,33 +54,50 @@ Every conversion executes locally using JavaScript, WebAssembly, and standard We
 | **Spreadsheets** | `.xlsx` `.xls` | SheetJS (multi-sheet GFM tables) |
 | | `.csv` `.tsv` | Native RFC 4180 stateful parser |
 | **Web & Data** | `.html` `.htm` | Turndown with GFM table support |
-| | `.xml` `.json` | Formatted code blocks with syntax styling |
-| **Images (OCR)** | `.png` `.jpg` `.jpeg` `.webp` `.gif` `.bmp` `.tiff` | Tesseract.js 5 (WASM worker) |
+| | `.xml` `.json` | Fenced code blocks (JSON is pretty-printed) |
+| **Images (OCR)** | `.png` `.jpg` `.jpeg` `.webp` `.gif` `.bmp` `.tiff` `.tif` | Tesseract.js 5 (WASM worker; language model downloaded on first use) |
 | **Text & Code** | `.txt` `.md` `.tex` `.latex` | Native text / LaTeX macro parser |
 
 ---
 
 ## Features
 
-| | Feature | Description |
-|:--|:--------|:------------|
-| 📄 | **Smart Heading Detection** | Classifies H1–H4 by computing statistical font-size histograms and body-text modes |
-| 📰 | **Multi-Column Detection** | Identifies 2-column PDF layouts via X-coordinate clustering to prevent interleaved text |
-| 📊 | **PDF Table Reconstruction** | Clusters horizontally and vertically aligned text blocks into GitHub Flavored Markdown (GFM) tables |
-| 🔍 | **OCR Engine** | Extracts text from scanned/image-only PDFs and standalone images using Tesseract.js in 12+ languages |
-| 📦 | **Batch Processing & Merging** | Convert multiple files concurrently, merge into one document with auto-generated TOC, or export as ZIP |
-| 📁 | **Folder Drag & Drop** | Recursively scans dropped directories for supported files |
-| ✏️ | **Live Split Editor** | Dual-pane markdown editor with synchronized HTML preview, live word/char counters, and syntax overlay |
-| ↩️ | **Undo / Redo History** | Debounced 50-step snapshot stack (`Ctrl+Z`, `Ctrl+Y`) for confident editing |
-| 🔎 | **Find & Replace** | Fast full-text and RegEx search with match counter and selection scrolling |
-| 💾 | **Multi-Format Export** | Download as `.md`, `.html`, `.txt`, or compile client-side to OpenXML `.docx` without server dependencies |
-| 👁️ | **Source PDF Viewer** | Embedded multi-page PDF canvas inspection tab with zoom controls |
-| 🌐 | **URL Import** | Convert remote web pages directly to Markdown via resilient CORS proxies |
-| 📋 | **Clipboard Ingestion** | Paste images (`image/*`) or HTML directly from the clipboard (`Ctrl+V`) for instant conversion |
-| 🕒 | **Conversion History** | Auto-saves recent conversions with localStorage persistence and instant restore |
-| 🌙 | **Dark Mode** | System-aware theme toggle with persistent preferences |
-| 📱 | **Installable PWA** | Web app manifest (`manifest.json`) and service worker (`sw.js`) for full offline desktop/mobile installation |
-| ⌨️ | **Keyboard Shortcuts** | `Ctrl+S` save, `Ctrl+F` find, `Ctrl+E` edit mode, `Ctrl+D` theme, `?` shortcuts dialog |
+Every row below is backed by an automated test (E2E in `tests/e2e/`, or a golden file in `tests/golden/`). Limits are stated in the row; see [`tests/golden/KNOWN_ISSUES.md`](tests/golden/KNOWN_ISSUES.md) for the open conversion-quality issues.
+
+| | Feature | Description | Verified by |
+|:--|:--------|:------------|:------------|
+| 📄 | **Heading Detection** | Classifies PDF headings by font size relative to the body text, page by page (`#`–`####`). Levels can be off by one; document-wide ranking is planned. | golden `pdf/headings` |
+| 📰 | **Multi-Column Detection** | *Experimental.* Tries to split 2-column PDF pages; columns can still interleave. | golden `pdf/two-column` (known issue) |
+| 📊 | **PDF Table Reconstruction** | *Heuristic.* Aligned text blocks become GFM tables; bordered and borderless tables work, but ordinary text and lists are sometimes mistaken for tables. | golden `pdf/table-*`, `pdf/lists` (known issues) |
+| 🔍 | **OCR Engine** | Extracts text from images and from image-only PDFs with Tesseract.js (12 languages). The first use of a language downloads its model; see [Privacy](#privacy-what-does-and-does-not-leave-your-device). | E2E `ocr`, golden `pdf/scanned` |
+| 📦 | **Batch Processing & Merging** | Converts several files **one after another** (with a Cancel button), merges them into one document with a linked table of contents, or exports a ZIP. | E2E `export-batch-history-paste`, `toc`, `cancel` |
+| 📁 | **Folder Drag & Drop** | Recursively scans dropped folders for supported files. | E2E `features` |
+| ✏️ | **Live Split Editor** | Editor and rendered preview side by side, with live line/word/character counts. | E2E `features`, `convert-and-views` |
+| ↩️ | **Undo / Redo** | 50-step history while editing (`Ctrl+Z`, `Ctrl+Y`). | E2E `features` |
+| 🔎 | **Find & Replace** | Plain-text or regular-expression search with a match counter, case toggle, next/previous (`Enter` / `Shift+Enter`), and the editor scrolls to each match. | E2E `find` |
+| 🧭 | **Table of Contents** | Click a heading to jump to it in Raw, Preview or Split view. | E2E `toc` |
+| 💾 | **Multi-Format Export** | Download `.md`, `.html`, `.txt` or `.docx`. The `.docx` is generated in the browser with basic structure. | E2E `export-batch-history-paste`, `features` |
+| 👁️ | **Source PDF Viewer** | Page-by-page view of the original PDF with zoom. | E2E `convert-and-views`, `features` |
+| 🌐 | **URL Import** | Converts a web page. Because browsers block most cross-site fetches, the request goes through public proxy services; you must confirm each time. See [Privacy](#privacy-what-does-and-does-not-leave-your-device). | E2E `url-import` |
+| 📋 | **Clipboard Ingestion** | Paste HTML or an image (`Ctrl+V`) for instant conversion; images are OCR'd. | E2E `export-batch-history-paste`, `ocr` |
+| 🕒 | **Conversion History** | Keeps the last 12 conversions in the browser (large documents are truncated in history) and restores them, also after a reload. | E2E `export-batch-history-paste`, `features` |
+| 🌙 | **Dark Mode** | System / light / dark, following the OS by default; the header button flips what you see. | E2E `theme` |
+| 📱 | **Installable PWA** | Web app manifest and a generated service worker: installable, and after the first load it works offline. OCR needs a connection to download its language model. | E2E `pwa` |
+| ⌨️ | **Keyboard Shortcuts** | `Ctrl+S` save, `Ctrl+F` find, `Ctrl+E` edit mode, `Ctrl+D` theme, `?` shortcuts dialog. | E2E `features` |
+
+---
+
+## Privacy: what does and does not leave your device
+
+| What | Leaves the device? |
+|:-----|:-------------------|
+| Files you drop, pick or paste | **Never.** Conversion runs entirely in your browser. |
+| App code, libraries and fonts | Loaded from the same origin as the app, not from a CDN. |
+| **URL import** | **Yes, only if you use it.** The page address is sent to a public proxy service (`corsproxy.io`, `api.allorigins.win` or `api.codetabs.com`) and the page comes back through it. The app shows exactly which hosts and asks you to confirm each time. |
+| **OCR language model** | **Yes, only if you use OCR.** The first time you recognise a language, its model is downloaded from `cdn.jsdelivr.net`. Only that download request is made; your document is not uploaded. The Settings panel says so when you switch OCR on. |
+| Analytics / telemetry | None. |
+
+Automated tests enforce this: no CDN hosts in the source, and no third-party requests while converting PDF, DOCX, XLSX or CSV files.
 
 ---
 
@@ -113,73 +132,55 @@ npm run build
 npm run preview
 ```
 
+### Test
+
+```bash
+npm run lint && npm run format:check && npm run typecheck
+npm test                  # unit tests + golden-file converter tests
+npm run test:e2e          # Playwright; build first (npm run build)
+npm run golden:update     # rewrite golden files after an intended converter change (review the diff!)
+```
+
+The first `npm run test:e2e` needs a browser: `npx playwright install chromium` (or set `PW_CHANNEL=chrome` to use an installed Chrome).
+
 ---
 
 ## Project Structure
 
 ```
 tomd/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          GitHub Pages deployment workflow (Vite build)
-├── public/
-│   ├── .nojekyll               Bypasses Jekyll processing on GitHub Pages
-│   ├── manifest.json           PWA manifest for desktop/mobile install
-│   └── sw.js                   Service Worker for offline caching
+├── .github/workflows/deploy.yml   CI (lint, format, typecheck, tests, build, e2e) then GitHub Pages deploy
+├── docs/                          PLAN.md (roadmap) and MASTER_PROMPT.md
+├── public/icons/                  PWA icons (PNG + maskable)
 ├── src/
-│   ├── main.tsx                React 19 application entry point
-│   ├── App.tsx                 Root layout, view tabs, and modals
-│   ├── index.css               Tailwind CSS 4 setup & custom scrollbars
-│   ├── types/
-│   │   └── index.ts            Core TypeScript definitions & schemas
-│   ├── config/
-│   │   └── index.ts            App constants, thresholds, and format map
-│   ├── context/
-│   │   └── AppContext.tsx      Global state, undo/redo, batch & storage sync
-│   ├── hooks/
-│   │   ├── useKeyboardShortcuts.ts   Global keybindings
-│   │   └── useClipboardPaste.ts      Clipboard image/HTML listener
-│   ├── lib/
-│   │   ├── utils.ts            Pure helpers (formatting, escaping, downloads)
-│   │   └── converters/
-│   │       ├── index.ts        Format dispatcher
-│   │       ├── pdf.ts          PDF layout heuristics & OCR fallback
-│   │       └── formats.ts      DOCX, XLSX, PPTX, EPUB, CSV, LaTeX, RTF
-│   └── components/
-│       ├── Header.tsx          Top brand bar, status pills & quick actions
-│       ├── DropZone.tsx        Motion-animated drag/drop, folder & URL import
-│       ├── BatchProcessor.tsx  Queue status, ZIP exporter & document merger
-│       ├── ActionBar.tsx       Tab switcher, stats & multi-format export dropdown
-│       ├── Editor.tsx          Monospaced markdown editor with tab support
-│       ├── Preview.tsx         Sanitized GitHub-flavored markdown preview
-│       ├── SplitView.tsx       Side-by-side synchronized editor & preview
-│       ├── SourcePdfViewer.tsx Page-by-page PDF canvas inspection tab
-│       ├── FindReplaceBar.tsx  Slide-down RegEx search & replace bar
-│       ├── TableOfContents.tsx Headings outline drawer
-│       ├── DocumentMetadata.tsx Extracted metadata viewer
-│       ├── SettingsModal.tsx   Extraction heuristics & OCR language modal
-│       ├── ShortcutsModal.tsx  Keyboard shortcuts guide
-│       ├── HistoryDrawer.tsx   Slide-out recent conversions panel
-│       └── ToastContainer.tsx  Animated notifications via Motion
-├── index.html                  Vite HTML template
-├── package.json                Dependencies & scripts
-├── tsconfig.json               TypeScript configuration
-├── tsconfig.node.json          TypeScript Node configuration
-└── vite.config.ts              Vite 6 build configuration & code chunking
+│   ├── core/                      UI-free conversion engine (no React): registry, converters, types
+│   │   ├── registry.ts            Extension → converter lookup, convertFile()
+│   │   └── converters/            pdf.ts (layout analysis, OCR) and formats.ts (everything else)
+│   ├── lib/                       Pure helpers: find, headings, merge, batch, theme, vendor loaders
+│   ├── context/AppContext.tsx     Global state, ingestion, history, batch
+│   ├── components/                UI components
+│   ├── hooks/                     Keyboard shortcuts, clipboard paste, theme class
+│   ├── config/ · types/           Constants and shared types
+│   └── main.tsx · App.tsx · index.css
+├── tests/
+│   ├── fixtures/                  Input files per format (+ build/ scripts that regenerate them)
+│   ├── golden/                    Expected Markdown per fixture, and KNOWN_ISSUES.md
+│   ├── e2e/                       Playwright specs
+│   └── lib/ · core/ · privacy/    Vitest unit tests
+└── vite.config.ts · vitest.config.ts · playwright.config.ts · eslint.config.js
 ```
 
 ---
 
-## Security & Privacy Model
+## Security Model
 
 | Layer | Protection Mechanism |
 |:------|:---------------------|
-| **Data Privacy** | All document parsing is performed locally in browser memory. No telemetry or file contents are sent over the network. |
-| **Input Validation** | 100 MB file size limit, format whitelisting, and password-protected PDF detection. |
-| **XSS Prevention** | `DOMPurify` sanitizes all parsed HTML before rendering into the DOM. Attribute-based and script injections are neutralized. |
-| **Network Security** | `AbortSignal.timeout(30s)` applied to all remote URL fetches. Dynamic script loader includes retry limits and failure cleanup. |
-| **Storage Safety** | LocalStorage quota guards with automatic oldest-entry truncation to prevent quota exceptions. |
-| **Offline Isolation** | Service Worker operates offline-first with strict origin checks to prevent opaque response bloat. |
+| **Input Validation** | 100 MB file size limit and a format whitelist. Password-protected PDFs are detected (PDF.js reports them) and the app shows "PDF is password-protected." |
+| **XSS Prevention** | `DOMPurify` sanitizes all converted HTML before it is rendered. |
+| **Network** | Converters make no network requests (enforced by a test). URL import uses `AbortSignal.timeout(30s)` and needs your confirmation each time. |
+| **Local Storage** | History keeps at most 12 entries, each truncated to 80,000 characters. If the browser refuses a write (quota), the failure is logged to the console. |
+| **Offline** | A generated Workbox service worker precaches the app shell and converters. Updates are applied only when you accept the "new version" prompt. |
 
 ---
 
@@ -189,7 +190,7 @@ Contributions, bug reports, and format additions are welcome!
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Test locally (`npm run dev` and `npm run build`)
+3. Run the checks (`npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e`)
 4. Commit your changes (`git commit -m 'feat: add amazing feature'`)
 5. Push to your branch (`git push origin feature/amazing-feature`)
 6. Open a **Pull Request**
@@ -202,6 +203,6 @@ Distributed under the [MIT](LICENSE) License. Free for personal and commercial u
 
 <div align="center">
 
-**Built with React 19, Vite 6, Tailwind CSS 4, and Motion. 100% Client-Side.**
+**Built with React 19, Vite 6, Tailwind CSS 4, and Motion. Client-side conversion.**
 
 </div>
