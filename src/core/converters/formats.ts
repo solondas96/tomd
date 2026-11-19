@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import type { ConversionResult } from '../../types';
 import { fileToBase64, formatBytes } from '../../lib/utils';
-import { createOcrWorker } from '../../lib/vendor/ocr';
+import { createOcrSession } from '../../lib/vendor/ocr-session';
 import { createTurndown } from '../html';
 import { extractSlideParagraphs } from '../ooxml';
 import type { ConversionContext, ConverterInput } from '../types';
@@ -145,43 +145,42 @@ export async function convertRtf(file: ConverterInput, ctx: ConversionContext): 
 
 export async function convertImage(file: ConverterInput, ctx: ConversionContext): Promise<ConversionResult> {
   const lang = ctx.options.ocrLanguage || 'eng';
-  let worker: Awaited<ReturnType<typeof createOcrWorker>> | null = null;
   ctx.signal.throwIfAborted();
+  ctx.onProgress({ fraction: 0.2, message: 'Initializing OCR engine...' });
 
+  let text: string;
+  const session = await createOcrSession(lang, ctx.signal).catch((error: unknown) => {
+    throw wrapOcrError(error, ctx.signal);
+  });
   try {
-    ctx.onProgress({ fraction: 0.2, message: 'Initializing OCR engine...' });
-    worker = await createOcrWorker(lang);
     ctx.onProgress({ fraction: 0.4, message: 'Recognizing image text...' });
-    const {
-      data: { text },
-    } = await worker.recognize(file);
-    await worker.terminate();
-
-    const md = text.trim();
-    if (!md) {
-      const b64 = await fileToBase64(file);
-      return {
-        markdown: `![Image](data:${file.type};base64,${b64})\n\n> No text detected in image.`,
-        pageCount: 1,
-        metadata: null,
-      };
-    }
-
-    return {
-      markdown: md,
-      pageCount: 1,
-      metadata: { Type: 'Image OCR', 'File size': formatBytes(file.size) },
-    };
-  } catch (err) {
-    if (worker) {
-      try {
-        await worker.terminate();
-      } catch {
-        /* ignore */
-      }
-    }
-    throw new Error('OCR recognition failed: ' + (err instanceof Error ? err.message : String(err)));
+    text = await session.recognize(file);
+  } catch (error) {
+    throw wrapOcrError(error, ctx.signal);
+  } finally {
+    await session.dispose();
   }
+
+  const md = text.trim();
+  if (!md) {
+    const b64 = await fileToBase64(file);
+    return {
+      markdown: `![Image](data:${file.type};base64,${b64})\n\n> No text detected in image.`,
+      pageCount: 1,
+      metadata: null,
+    };
+  }
+  return {
+    markdown: md,
+    pageCount: 1,
+    metadata: { Type: 'Image OCR', 'File size': formatBytes(file.size) },
+  };
+}
+
+/** Keeps cancellation as the original `AbortError`; wraps any other failure with context. */
+function wrapOcrError(error: unknown, signal: AbortSignal): Error {
+  if (signal.aborted) return error instanceof Error ? error : new DOMException('Aborted', 'AbortError');
+  return new Error('OCR recognition failed: ' + (error instanceof Error ? error.message : String(error)));
 }
 
 // ── Plain Text / Markdown ─────────────────────────────────────

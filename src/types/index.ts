@@ -41,7 +41,7 @@ export interface ConversionResult {
   metadata?: ConversionMetadata | null;
 }
 
-export type BatchStatus = 'pending' | 'processing' | 'done' | 'error';
+export type BatchStatus = 'pending' | 'processing' | 'done' | 'error' | 'cancelled';
 
 export interface BatchItem {
   id: string;

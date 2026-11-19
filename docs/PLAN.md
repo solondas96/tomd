@@ -136,7 +136,7 @@ Work the milestones in order. Within a milestone, any item whose dependencies ar
 - **Change:** On match change, call `textarea.setSelectionRange` and scroll the match into view. Enter goes to the next match and Shift+Enter to the previous one. Add a case-sensitive toggle. Show an invalid-regex state inline rather than silently returning 0.
 - **Done when:** An E2E test pressing "next" moves the selection.
 
-### [ ] B-08 · Cancel doesn't work for batch / OCR `S` · deps: F-04
+### [x] B-08 · Cancel doesn't work for batch / OCR `S` · deps: F-04
 - **Change:** Thread the `AbortSignal` through `ConversionContext`. Batch shares one controller and shows a cancel button. Terminate the Tesseract worker when the signal aborts.
 - **Done when:** Cancelling a 10-file batch stops within one file, and cancelling OCR stops within one page.
 

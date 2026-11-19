@@ -24,6 +24,7 @@ import {
 } from '../config';
 import { wordCount, charCount, friendlyError, generateFrontmatter, triggerDownload } from '../lib/utils';
 import { useThemeClass } from '../hooks/useThemeClass';
+import { isAbortError, runBatch } from '../lib/batch';
 import { buildMergedMarkdown } from '../lib/merge';
 import { flippedPreference, migrateSettings } from '../lib/theme';
 import { convertFile, FormatId, findConverter, htmlPageToMarkdown, isSupported } from '../core';
@@ -315,7 +316,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProgressMsg('Complete!');
         addToast(`Converted ${file.name} successfully`, 'success');
       } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
+        if (isAbortError(err)) {
           addToast('Conversion cancelled', 'info');
         } else {
           console.error('[toMD] Conversion error:', err);
@@ -344,44 +345,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: 'pending',
       }));
       setBatchItems(items);
-      const batchSignal = new AbortController().signal; // cancellation UI lands in B-08
+      // One controller for the whole batch: "Cancel" aborts the in-flight file and skips the queue.
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        setBatchItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, status: 'processing' } : it)));
+      const updateItem = (index: number, patch: Partial<BatchItem>) =>
+        setBatchItems((prev) => prev.map((it, idx) => (idx === index ? { ...it, ...patch } : it)));
 
-        try {
-          const result = await convertFile(item.file, {
-            options: settings,
-            signal: batchSignal,
-            onProgress: () => {},
-          });
-
-          let md = result.markdown;
-          if (settings.frontmatter && result.metadata) {
-            md = generateFrontmatter(result.metadata, item.filename) + md;
-          }
-
-          setBatchItems((prev) =>
-            prev.map((it, idx) =>
-              idx === i ? { ...it, markdown: md, pageCount: result.pageCount, status: 'done' } : it,
+      const summary = await runBatch(
+        items,
+        async (item, _index, signal) => {
+          const result = await convertFile(item.file, { options: settings, signal, onProgress: () => {} });
+          const markdown =
+            settings.frontmatter && result.metadata
+              ? generateFrontmatter(result.metadata, item.filename) + result.markdown
+              : result.markdown;
+          return { markdown, pageCount: result.pageCount };
+        },
+        controller.signal,
+        {
+          onStart: (index) => updateItem(index, { status: 'processing' }),
+          onDone: (index, { markdown, pageCount }) => {
+            updateItem(index, { markdown, pageCount, status: 'done' });
+            saveToHistory({ filename: items[index].filename, markdown, pageCount: pageCount || 1 });
+          },
+          onError: (index, err) => updateItem(index, { status: 'error', error: friendlyError(err) }),
+          onCancelled: (indexes) =>
+            setBatchItems((prev) =>
+              prev.map((it, idx) =>
+                indexes.includes(idx) ? { ...it, status: 'cancelled', markdown: '', pageCount: undefined } : it,
+              ),
             ),
-          );
-
-          saveToHistory({
-            filename: item.filename,
-            markdown: md,
-            pageCount: result.pageCount || 1,
-          });
-        } catch (err) {
-          setBatchItems((prev) =>
-            prev.map((it, idx) => (idx === i ? { ...it, status: 'error', error: friendlyError(err) } : it)),
-          );
-        }
-      }
+        },
+      );
+      abortControllerRef.current = null;
 
       setIsProcessing(false);
-      addToast(`Batch conversion finished (${items.length} files)`, 'success');
+      if (summary.cancelled > 0) {
+        addToast(`Batch cancelled: ${summary.done} of ${items.length} files converted`, 'info');
+      } else {
+        addToast(`Batch conversion finished (${items.length} files)`, 'success');
+      }
     },
     [isProcessing, settings, saveToHistory, addToast],
   );

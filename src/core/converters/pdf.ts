@@ -3,7 +3,7 @@ import type { ConversionOptions, ConversionResult, ConversionMetadata } from '..
 import type { PDFPageProxy } from 'pdfjs-dist';
 import type { TextContent, TextItem } from 'pdfjs-dist/types/src/display/api';
 import { require2dContext } from '../../lib/utils';
-import { createOcrWorker } from '../../lib/vendor/ocr';
+import { createOcrSession, type OcrSession } from '../../lib/vendor/ocr-session';
 import { loadPdfJs } from '../../lib/vendor/pdfjs';
 import type { ConversionContext, ConverterInput } from '../types';
 
@@ -45,34 +45,42 @@ export async function convertPdf(file: ConverterInput, ctx: ConversionContext): 
 
   const pagesToProcess = Math.max(1, to - from + 1);
 
-  for (let p = from; p <= to; p++) {
-    // Outside the try below, so cancellation is not mistaken for a failed page.
-    ctx.signal.throwIfAborted();
-    try {
-      const page = await pdf.getPage(p);
-      const vp = page.getViewport({ scale: 1 });
-      const content = await page.getTextContent();
-      let md = pageToMarkdown(content, vp.height, opts);
+  let ocrSession: OcrSession | null = null;
+  try {
+    for (let p = from; p <= to; p++) {
+      // Outside the try below, so cancellation is not mistaken for a failed page.
+      ctx.signal.throwIfAborted();
+      try {
+        const page = await pdf.getPage(p);
+        const vp = page.getViewport({ scale: 1 });
+        const content = await page.getTextContent();
+        let md = pageToMarkdown(content, vp.height, opts);
 
-      if (!md.trim() && opts.extractImages) {
-        md = await renderPageAsImage(page);
-      }
-      if (!md.trim() && opts.ocr) {
-        md = await ocrPage(page, opts.ocrLanguage || 'eng');
+        if (!md.trim() && opts.extractImages) {
+          md = await renderPageAsImage(page);
+        }
+        if (!md.trim() && opts.ocr) {
+          // One OCR engine per document: starting it is slow, and it must be released when done.
+          ocrSession ??= await createOcrSession(opts.ocrLanguage || 'eng', ctx.signal);
+          md = await ocrPage(page, ocrSession);
+        }
+
+        if (md.trim()) {
+          pages.push(md.trim());
+        }
+      } catch (err) {
+        if (ctx.signal.aborted) throw err; // cancelled mid-page: stop, do not record a page failure
+        pages.push(`> ⚠ Page ${p} failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
 
-      if (md.trim()) {
-        pages.push(md.trim());
-      }
-    } catch (err) {
-      pages.push(`> ⚠ Page ${p} failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      const currentProcessed = p - from + 1;
+      ctx.onProgress({
+        fraction: currentProcessed / pagesToProcess,
+        message: `Processed page ${currentProcessed} of ${pagesToProcess}...`,
+      });
     }
-
-    const currentProcessed = p - from + 1;
-    ctx.onProgress({
-      fraction: currentProcessed / pagesToProcess,
-      message: `Processed page ${currentProcessed} of ${pagesToProcess}...`,
-    });
+  } finally {
+    await ocrSession?.dispose();
   }
 
   if (!pages.length) {
@@ -374,21 +382,11 @@ async function renderPageAsImage(page: PDFPageProxy): Promise<string> {
   }
 }
 
-async function ocrPage(page: PDFPageProxy, lang: string): Promise<string> {
-  try {
-    const vp = page.getViewport({ scale: 2 });
-    const canvas = document.createElement('canvas');
-    canvas.width = vp.width;
-    canvas.height = vp.height;
-    await page.render({ canvasContext: require2dContext(canvas), viewport: vp }).promise;
-    const worker = await createOcrWorker(lang || 'eng');
-    const {
-      data: { text },
-    } = await worker.recognize(canvas);
-    await worker.terminate();
-    return text.trim();
-  } catch (err) {
-    console.warn('[OCR] Page failed:', err);
-    return '';
-  }
+async function ocrPage(page: PDFPageProxy, session: OcrSession): Promise<string> {
+  const vp = page.getViewport({ scale: 2 });
+  const canvas = document.createElement('canvas');
+  canvas.width = vp.width;
+  canvas.height = vp.height;
+  await page.render({ canvasContext: require2dContext(canvas), viewport: vp }).promise;
+  return (await session.recognize(canvas)).trim();
 }
